@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>Calendario Bíblico — Biblical Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f2e7; --surface:#fffdf8; --ink:#1d1a14; --muted:#5d5648; --line:#ddd2b8;
+  --gold:#9a7418; --gold-bg:#f3e6c3; --accent:#7a1f1f; --accent2:#1e4d3b;
+  --fest:#fff3c4; --fest-line:#c9a227; --today:#7a1f1f;
+  --shadow:0 10px 30px rgba(60,45,10,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#171512; --surface:#221f1a; --ink:#f1e9d6; --muted:#c9bda3; --line:#4a4232; --gold:#e3b93e; --gold-bg:#3a3016; --fest:#3a3016; --fest-line:#e3b93e; --today:#e88a8a; --shadow:0 10px 30px rgba(0,0,0,.45); }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Lato,system-ui,sans-serif;line-height:1.55}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 64px}
+/* Lang toggle behaviour */
+body[data-lang="es"] .lang-en{display:none!important}
+body[data-lang="en"] .lang-es{display:none!important}
+body[data-lang="both"] .lang-en{opacity:.92}
+.lang-en{font-size:.96em}
+body[data-lang="both"] :is(h1,h2,h3,h4) .lang-en{display:block;margin-top:5px}
+body[data-lang="both"] .hero .num .lang-en,body[data-lang="both"] .pill .lang-en,body[data-lang="both"] .aka .lang-en,body[data-lang="both"] .verse .lang-en,body[data-lang="both"] footer p .lang-en,body[data-lang="both"] .section-sub .lang-en{display:block;margin-top:5px}
+body[data-lang="both"] :is(.cell .g,li,.m-dates,.legend,.cal-title,.ov-num,.ov-theme,.m-number small) .lang-en::before{content:" · "}
+body[data-lang="both"] .ov-theme .lang-en{display:block;margin-top:3px}
+body[data-lang="both"] .ov-theme .lang-en::before{content:""}
+.divider-lang{border:0;border-top:1px dashed var(--line);margin:10px 0}
+/* Hero */
+.hero{margin:0 -18px;padding:44px 22px 34px;text-align:center;color:#fff;background:
+  radial-gradient(900px 300px at 20% 0%,rgba(255,210,90,.35),transparent 60%),
+  radial-gradient(800px 300px at 90% 10%,rgba(120,30,30,.5),transparent 60%),
+  linear-gradient(160deg,#1c2b4a 0%,#3b2f16 55%,#6b4e12 100%);border-bottom:6px solid #c9a227}
+.hero .num{font-family:Cinzel,serif;letter-spacing:.35em;font-size:12px;text-transform:uppercase;color:#f5d97a}
+.hero h1{font-family:Cinzel,serif;font-size:clamp(32px,6vw,58px);line-height:1.05;margin:12px 0 6px}
+.hero h2{font-family:"EB Garamond",serif;font-weight:400;font-style:italic;font-size:clamp(19px,3vw,26px);margin:0;color:#f8ecc8}
+.hero blockquote{max-width:760px;margin:22px auto 0;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:16px 18px;font-family:"EB Garamond",serif;font-size:18px;text-align:left}
+.hero blockquote p{margin:0 0 8px}.hero blockquote cite{font-family:Lato,sans-serif;font-style:normal;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#f5d97a}
+.hero .meta{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:18px}
+.pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700}
+/* Controls */
+.controls{position:sticky;top:0;z-index:20;background:var(--bg);padding:14px 0 10px;border-bottom:1px solid var(--line)}
+.controls-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:transparent;color:var(--ink);padding:9px 16px;font-weight:900;cursor:pointer;font-family:Lato,sans-serif}
+.seg button.active{background:var(--accent);color:#fff}
+.jump{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.jump a{text-decoration:none;background:var(--surface);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:6px 10px;font-size:13px;font-weight:700}
+.jump a:hover{border-color:var(--gold);background:var(--gold-bg)}
+.jump a b{color:var(--accent)}
+/* Intro */
+.intro{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:22px 0}
+@media(max-width:760px){.intro{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow)}
+.card h3{font-family:Cinzel,serif;margin:0 0 8px;font-size:20px}
+.card p{margin:0 0 8px;color:var(--muted)} .card p strong{color:var(--ink)}
+h2.section{font-family:Cinzel,serif;font-size:clamp(24px,4vw,34px);margin:34px 0 6px}
+p.section-sub{color:var(--muted);margin:0 0 16px;max-width:820px}
+/* Leap facts */
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+@media(max-width:760px){.facts{grid-template-columns:1fr}}
+.fact{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--gold-bg)}
+.fact .fv{font-family:Cinzel,serif;font-size:26px;font-weight:900;line-height:1.1}
+.fact .fl{font-size:13px;color:var(--muted);margin-top:4px}
+.fact .fl strong{color:var(--ink)}
+/* Overview */
+.overview{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.overview{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.overview{grid-template-columns:1fr}}
+.ov{border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--surface);text-decoration:none;color:var(--ink);display:block;box-shadow:var(--shadow)}
+.ov-head{padding:14px 16px;color:#fff;min-height:92px}
+.ov-num{font-family:Cinzel,serif;font-size:11px;letter-spacing:.25em;text-transform:uppercase;opacity:.9}
+.ov-name{font-family:Cinzel,serif;font-size:22px;font-weight:900;line-height:1.1;margin-top:4px}
+.ov-hebrew{font-family:"EB Garamond",serif;font-style:italic;opacity:.95}
+.ov-body{padding:12px 16px 14px;font-size:14px;color:var(--muted)}
+.ov-body strong{color:var(--ink)}
+.ov-theme{margin-top:6px;color:var(--ink)}
+/* Month detail */
+.month{margin-top:28px;border-radius:22px;overflow:hidden;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);scroll-margin-top:120px}
+.m-head{padding:26px 22px;color:#fff;position:relative;overflow:hidden}
+.m-head::after{content:"";position:absolute;inset:0;background:radial-gradient(600px 200px at 85% 0%,rgba(255,255,255,.25),transparent 60%);pointer-events:none}
+.m-top{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;position:relative;z-index:1}
+.m-number{font-family:Cinzel,serif;font-size:64px;line-height:.9;font-weight:900;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);border-radius:16px;padding:12px 16px;text-align:center;min-width:96px}
+.m-number small{display:block;font-size:10px;letter-spacing:.2em;margin-top:6px}
+.m-title{flex:1;min-width:240px}
+.m-title h3{font-family:Cinzel,serif;font-size:clamp(28px,4vw,40px);margin:0;line-height:1}
+.m-title .aka{font-family:"EB Garamond",serif;font-size:18px;font-style:italic;margin-top:6px;opacity:.95}
+.m-dates{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+.m-dates span{background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.3);padding:6px 10px;border-radius:999px;font-size:13px;font-weight:700}
+.m-body{display:grid;grid-template-columns:340px 1fr;gap:0}
+@media(max-width:900px){.m-body{grid-template-columns:1fr}}
+.m-info{padding:20px;border-right:1px solid var(--line)}
+@media(max-width:900px){.m-info{border-right:0;border-bottom:1px solid var(--line)}}
+.m-info h4{font-family:Cinzel,serif;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:16px 0 6px}
+.m-info h4:first-child{margin-top:0}
+.m-info p{margin:0;color:var(--muted);font-size:15px}.m-info p strong{color:var(--ink)}
+.verse{font-family:"EB Garamond",serif;font-size:17px;background:var(--gold-bg);border-radius:12px;padding:12px 14px;color:var(--ink)!important}
+.verse cite{display:block;font-family:Lato,sans-serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-top:8px;color:var(--gold);font-style:normal;font-weight:900}
+ul.events{margin:0;padding-left:18px;color:var(--muted);font-size:14.5px} ul.events li{margin:5px 0} ul.events strong{color:var(--ink)}
+/* Calendar grid */
+.cal{padding:20px}
+.cal-title{font-weight:900;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.weekdays,.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.weekdays div{text-align:center;font-size:11px;font-weight:900;letter-spacing:.04em;color:var(--muted);padding:6px 2px;text-transform:uppercase}
+.cell{min-height:74px;border:1px solid var(--line);border-radius:12px;padding:7px 8px;background:var(--surface);position:relative}
+.cell.empty{background:transparent;border-style:dashed;opacity:.45}
+.cell .d{font-family:Cinzel,serif;font-size:22px;font-weight:900;line-height:1}
+.cell .g{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.25}
+.cell .tag{font-size:10px;font-weight:900;color:var(--accent);margin-top:4px;line-height:1.2}
+.cell.fest{background:var(--fest);border-color:var(--fest-line)}
+.cell.sabbath{background:color-mix(in srgb, var(--gold-bg) 55%, var(--surface))}
+.cell.today{outline:3px solid var(--today);outline-offset:1px}
+.cell.today::after{content:"HOY · TODAY";position:absolute;top:6px;right:6px;font-size:8.5px;font-weight:900;letter-spacing:.05em;color:var(--today)}
+@media(max-width:560px){.cell{min-height:62px;padding:5px}.cell .d{font-size:17px}.cell .g{font-size:10px}.cell .tag{display:none}.m-number{font-size:44px;min-width:76px}}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);margin-top:12px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:5px;border:1px solid var(--line)}
+.note{margin-top:22px}
+.cell .tag.nm{color:var(--accent2)}
+.names{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}
+.names th,.names td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+.names th{font-family:Cinzel,serif;font-size:12px;letter-spacing:.06em;text-transform:uppercase;background:var(--gold-bg);color:var(--ink)}
+.names td{color:var(--muted)} .names td strong{color:var(--ink)}
+@media(max-width:560px){.names{font-size:12.5px}.names th,.names td{padding:6px 7px}}
+.subh{font-family:Cinzel,serif;font-size:16px;margin:18px 0 6px;color:var(--ink)}
+.subh:first-of-type{margin-top:6px}
+/* Why the changes happened */
+.why-summary{border:1.5px solid var(--fest-line);background:var(--gold-bg);border-radius:14px;padding:16px 18px;margin:14px 0 6px}
+.why-summary p{margin:0 0 8px;color:var(--ink);font-size:16px}
+.why-summary p:last-child{margin-bottom:0}
+.why-step{display:flex;gap:14px;margin-top:16px}
+.why-num{flex:none;width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;font-family:Cinzel,serif;font-weight:900;display:flex;align-items:center;justify-content:center;font-size:18px;margin-top:2px}
+.why-step-body{flex:1;min-width:0}
+.why-step-body h4{font-family:Cinzel,serif;font-size:16px;margin:0 0 6px;color:var(--ink)}
+.why-step-body p{margin:0 0 8px;color:var(--muted)} .why-step-body p strong{color:var(--ink)}
+.same-month{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+@media(max-width:560px){.same-month{grid-template-columns:1fr}}
+.same-month div{border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:14.5px;color:var(--muted)}
+.same-month div strong{color:var(--ink)}
+ul.why-list{margin:0;padding-left:18px;color:var(--muted);font-size:15px} ul.why-list li{margin:7px 0} ul.why-list strong{color:var(--ink)}
+body[data-lang="both"] .names .lang-en::before{content:" · "}
+footer{margin-top:36px;border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:13.5px}
+footer strong{color:var(--ink)}
+/* Tools: year, auto-update, PDF, next feast, converters */
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0 4px}
+@media(max-width:900px){.tools{grid-template-columns:1fr}}
+.tool h4{font-family:Cinzel,serif;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:0 0 10px}
+.tool p{margin:0 0 8px;color:var(--muted);font-size:14.5px}.tool p strong{color:var(--ink)}
+.tool input[type="number"],.tool input[type="date"],.tool select{font-family:Lato,sans-serif;font-size:15px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);max-width:100%}
+.tool .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.btn{border:0;background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;font-weight:900;cursor:pointer;font-family:Lato,sans-serif;font-size:14px}
+.btn.alt{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn:hover{filter:brightness(1.08)}
+.switchrow{display:flex;gap:10px;align-items:flex-start;background:var(--gold-bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:6px}
+.switchrow input{width:22px;height:22px;accent-color:var(--accent);flex:none;margin-top:2px}
+.switchrow span{font-size:14.5px;color:var(--ink)}
+.tool .result{margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;font-size:15px;color:var(--ink)}
+.tool .result:empty{display:none}
+.nextbig{font-family:Cinzel,serif;font-size:21px;font-weight:900;line-height:1.25;color:var(--ink)}
+/* Omer + undated + event tags */
+.cell .tag.omer{color:var(--accent2)}
+.cell .tag.evt{color:var(--gold)}
+.undated{border:1.5px dashed var(--fest-line);border-radius:12px;padding:12px 14px;margin-top:16px}
+.undated h4{margin-top:0!important}
+.undated p{font-size:14px}
+.omerbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.omerweek{border:1px solid var(--line);border-radius:10px;padding:8px 11px;font-size:13.5px;background:var(--gold-bg);color:var(--ink)}
+/* Two views: strict / calculated */
+body[data-view="calc"] .strict-only{display:none!important}
+body[data-view="strict"] .calc-only{display:none!important}
+body[data-view="strict"] .hero .yr{display:none}
+.viewseg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.viewseg button{border:0;background:transparent;color:var(--ink);padding:9px 16px;font-weight:900;cursor:pointer;font-family:Lato,sans-serif}
+.viewseg button.active{background:var(--accent2);color:#fff}
+.strict-banner{border:1.5px solid var(--accent2);border-radius:18px;padding:20px;background:var(--surface);box-shadow:var(--shadow);margin:22px 0}
+.strict-banner h3{font-family:Cinzel,serif;margin:0 0 8px;font-size:20px;color:var(--accent2)}
+.strict-banner p{margin:0 0 8px;color:var(--muted)} .strict-banner p strong{color:var(--ink)}
+.s-body{padding:20px}
+.s-days{margin:0;padding-left:18px;color:var(--muted);font-size:14.5px} .s-days li{margin:5px 0} .s-days strong{color:var(--ink)}
+@media print{.controls,.tools{display:none!important}.month,.card{break-inside:avoid;box-shadow:none}.hero{margin:0}}
+</style>
+</head>
+<body data-lang="both" data-view="calc">
+<div class="wrap">
+
+<header class="hero">
+  <div class="num"><span class="lang-es">Año bíblico · Orden de Éxodo 12:2</span><span class="lang-en">Biblical Year · The Order of Exodus 12:2</span></div>
+  <h1><span class="lang-es">Calendario Bíblico <span class="yr"></span></span><span class="lang-en">Biblical Calendar <span class="yr"></span></span></h1>
+  <h2 class="calc-only"><span class="lang-es">Los meses de la Biblia, día por día, con sus fechas de <span class="yr"></span></span><span class="lang-en">The months of the Bible, day by day, with their <span class="yr"></span> dates</span></h2>
+  <h2 class="strict-only"><span class="lang-es">Solo lo que la Biblia dice: meses por número y fiestas por día bíblico, sin fechas de hoy</span><span class="lang-en">Only what the Bible says: months by number and feasts by biblical day, with no dates from today’s calendar</span></h2>
+  <blockquote>
+    <p class="lang-es">“Este mes os será principio de los meses; será este para vosotros el primero en los meses del año.”</p>
+    <p class="lang-en">“This month shall be unto you the beginning of months: it shall be the first month of the year to you.”</p>
+    <cite>Éxodo / Exodus 12:2 — Reina-Valera 1909 / King James Version</cite>
+  </blockquote>
+  <div class="meta">
+    <span class="pill">1 · Nisán / Nisan — <span class="lang-es">el primer mes</span><span class="lang-en">the first month</span></span>
+    <span class="pill calc-only"><span class="lang-es">Año bíblico: </span><span class="lang-en">Biblical year: </span><span id="heroRange">…</span></span>
+    <span class="pill calc-only" id="heroKind">…</span>
+    <span class="pill strict-only"><span class="lang-es">Vista estricta: 12 meses · sin Adar II · sin fecha de hoy</span><span class="lang-en">Strict view: 12 months · no Adar II · no today’s date</span></span>
+    <span class="pill"><span class="lang-es">Exacto a la Biblia, sin obviar nada</span><span class="lang-en">Exactly as the Bible says, omitting nothing</span></span>
+    <span class="pill"><span class="lang-es">Cada día bíblico comienza al atardecer anterior</span><span class="lang-en">Each biblical day begins at sunset the evening before</span></span>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="controls-row">
+    <strong>Idioma · Language</strong>
+    <div class="seg" role="group" aria-label="Language">
+      <button data-setlang="es">Español</button>
+      <button data-setlang="both" class="active">ES + EN</button>
+      <button data-setlang="en">English</button>
+    </div>
+  </div>
+  <div class="controls-row" style="margin-top:10px">
+    <strong><span class="lang-es">Vista</span><span class="lang-en">View</span></strong>
+    <div class="viewseg" role="group" aria-label="View">
+      <button data-setview="strict"><span class="lang-es">Estricta — solo la Biblia</span><span class="lang-en">Strict — Bible only</span></button>
+      <button data-setview="calc" class="active"><span class="lang-es">Calculada — para usarla hoy</span><span class="lang-en">Calculated — for use today</span></button>
+    </div>
+  </div>
+  <nav class="jump calc-only" id="jumpNav" aria-label="Months"></nav>
+</div>
+
+<section class="tools calc-only">
+  <article class="card tool">
+    <h4><span class="lang-es">Año, actualización y PDF</span><span class="lang-en">Year, auto-update &amp; PDF</span></h4>
+    <label class="switchrow"><input type="checkbox" id="autoToggle" checked><span><strong><span class="lang-es">Actualización automática</span><span class="lang-en">Automatic update</span></strong><br><span class="lang-es">Encendida: la página muestra siempre el año en que estamos y se recalcula sola al cambiar el año. Apágala para ver otro año fijo.</span><span class="lang-en">On: the page always shows the current year and recalculates itself when the year changes. Turn it off to view a fixed year.</span></span></label>
+    <div class="row">
+      <button class="btn alt" id="yearPrev" aria-label="Previous year">‹</button>
+      <input type="number" id="yearInput" min="1800" max="2600" step="1" aria-label="Year">
+      <button class="btn alt" id="yearNext" aria-label="Next year">›</button>
+      <button class="btn" id="yearGo"><span class="lang-es">Ver año</span><span class="lang-en">View year</span></button>
+    </div>
+    <div class="row">
+      <button class="btn" id="pdfBtn"><span class="lang-es">Descargar PDF del año mostrado</span><span class="lang-en">Download PDF of the year shown</span></button>
+    </div>
+    <p id="pdfMsg"></p>
+    <p><span class="lang-es">El PDF se genera para el año que estás viendo: con la actualización automática encendida, es el año actual.</span><span class="lang-en">The PDF is generated for the year you are viewing: with auto-update on, that is the current year.</span></p>
+  </article>
+  <article class="card tool">
+    <h4><span class="lang-es">Próxima fiesta bíblica</span><span class="lang-en">Next biblical feast</span></h4>
+    <div id="nextFeast"><p>…</p></div>
+    <hr class="divider-lang">
+    <p><span class="lang-es">Y cada semana: el <strong>sábado</strong>, primera fiesta de Levítico 23:3, y el <strong>día 1 de cada mes</strong>, la Luna Nueva (Números 28:11).</span><span class="lang-en">And every week: the <strong>Sabbath</strong>, first feast of Leviticus 23:3, and on <strong>day 1 of every month</strong>, the New Moon (Numbers 28:11).</span></p>
+  </article>
+  <article class="card tool">
+    <h4><span class="lang-es">Buscador de fechas</span><span class="lang-en">Date finder</span></h4>
+    <p><strong><span class="lang-es">Fecha de hoy → día bíblico</span><span class="lang-en">Today’s date → biblical day</span></strong></p>
+    <div class="row"><input type="date" id="convG"><button class="btn" id="convGGo"><span class="lang-es">Buscar</span><span class="lang-en">Find</span></button></div>
+    <div class="result" id="convGResult"></div>
+    <hr class="divider-lang">
+    <p><strong><span class="lang-es">Día bíblico → fecha de hoy</span><span class="lang-en">Biblical day → today’s date</span></strong></p>
+    <div class="row"><select id="convMonth" aria-label="Month"></select><input type="number" id="convDay" min="1" max="30" value="1" aria-label="Day"><button class="btn" id="convBGo"><span class="lang-es">Buscar</span><span class="lang-en">Find</span></button></div>
+    <p><span class="lang-es">Este sentido usa el año mostrado en la página.</span><span class="lang-en">This direction uses the year shown on the page.</span></p>
+    <div class="result" id="convBResult"></div>
+  </article>
+</section>
+
+<section class="strict-banner strict-only">
+  <h3><span class="lang-es">Vista estricta — solo lo que la Biblia dice</span><span class="lang-en">Strict view — only what the Bible says</span></h3>
+  <p class="lang-es">Aquí no hay cálculo añadido: los meses van <strong>solo por su número</strong>, del 1 al 12, empezando en <strong>Abib</strong> (Éxodo 12:2), con el nombre únicamente cuando la Biblia misma lo da. Las fiestas van <strong>solo por su día bíblico</strong> — por ejemplo, «día 14 del mes primero» — <strong>sin fecha gregoriana debajo</strong>. Por eso esta vista <strong>no dice qué día bíblico es hoy</strong>, no tiene buscador de fechas ni PDF por año, y trae <strong>siempre 12 meses: sin Adar II</strong>, porque la Biblia no lo nombra ni manda añadirlo. Tampoco trae tabla de días por mes, porque la Biblia no la da. Para saber qué día es hoy y cuándo cae cada fiesta este año, usa la <strong>vista calculada</strong>.</p>
+  <p class="lang-en">Here there is no added calculation: the months go <strong>by number only</strong>, 1 to 12, beginning with <strong>Abib</strong> (Exodus 12:2), with a name only when the Bible itself gives one. The feasts go <strong>by their biblical day only</strong> — for example, “day 14 of the first month” — <strong>with no Gregorian date underneath</strong>. That is why this view <strong>does not say which biblical day today is</strong>, has no date finder and no PDF by year, and always has <strong>12 months: no Adar II</strong>, because the Bible does not name it or command adding it. It also has no table of days per month, because the Bible does not give one. To know what day today is and when each feast falls this year, use the <strong>calculated view</strong>.</p>
+  <p><span class="lang-es"><strong>¿Por qué cambió lo demás?</strong> Debajo, en <a href="#porque">«¿Por qué se hicieron los cambios?»</a>, está explicado con claridad: el cautiverio en Babilonia cambió los nombres que la gente usaba, y el cálculo posterior se hizo para poder ubicar las fiestas hoy — sin cambiar ninguna fiesta.</span><span class="lang-en"><strong>Why did the rest change?</strong> Below, in <a href="#porque">“Why were the changes made?”</a>, it is plainly explained: the Babylonian captivity changed the names people used, and the later calculation was made to place the feasts today — without changing any feast.</span></p>
+</section>
+
+<section class="intro calc-only">
+  <article class="card">
+    <h3><span class="lang-es">Cómo leer este calendario</span><span class="lang-en">How to read this calendar</span></h3>
+    <p class="lang-es"><strong>El número grande</strong> es el día del mes bíblico (1 al 29 o 30). <strong>La fecha pequeña</strong> debajo es el día del calendario de hoy. Por ejemplo, <strong>1 de Nisán = <span id="exNisanEs">…</span></strong>.</p>
+    <p class="lang-en"><strong>The large number</strong> is the day of the biblical month (1 to 29 or 30). <strong>The small date</strong> underneath is the day on today’s calendar. For example, <strong>1 Nisan = <span id="exNisanEn">…</span></strong>.</p>
+    <hr class="divider-lang">
+    <p class="lang-es">Los meses bíblicos son <strong>lunares</strong>: tienen 29 o 30 días, según el mes y según el año. Por eso no coinciden exactamente con enero–diciembre. El fondo de cada mes refleja lo que ese mes representa en la Biblia.</p>
+    <p class="lang-en">Biblical months are <strong>lunar</strong>: they have 29 or 30 days, depending on the month and the year. That is why they do not line up exactly with January–December. Each month’s background reflects what that month represents in the Bible.</p>
+    <hr class="divider-lang">
+    <p class="lang-es">Este calendario <strong>se actualiza solo</strong>: al abrirlo muestra el año en que estamos (<span class="yr"></span>) y calcula las fechas, los días de cada mes y si el año es bisiesto.</p>
+    <p class="lang-en">This calendar <strong>updates itself</strong>: when opened it shows the current year (<span class="yr"></span>) and calculates the dates, each month’s days and whether the year is a leap year.</p>
+  </article>
+  <article class="card">
+    <h3><span class="lang-es">Por qué <span class="yr"></span> no empieza en Nisán</span><span class="lang-en">Why <span class="yr"></span> does not begin in Nisan</span></h3>
+    <div id="janText"><p>…</p></div>
+    <hr class="divider-lang">
+    <p class="lang-es">Abajo los meses están en <strong>orden bíblico</strong>, empezando en Nisán, como manda Éxodo 12:2. Si el año es bisiesto, la lista tiene <strong>13 meses</strong>.</p>
+    <p class="lang-en">Below, the months are in <strong>biblical order</strong>, beginning with Nisan, as Exodus 12:2 commands. If the year is a leap year, the list has <strong>13 months</strong>.</p>
+  </article>
+</section>
+
+<section class="card note" id="exacto">
+  <h3><span class="lang-es">Exacto a la Biblia, sin obviar nada</span><span class="lang-en">Exactly as the Bible says, omitting nothing</span></h3>
+  <p class="lang-es">La regla de este calendario: <strong>todo lo que está señalado sale de un texto de la Biblia, citado</strong>; y lo que la Biblia no dice se identifica como lo que es — cálculo hebreo posterior — nunca como mandato bíblico. Nada de lo que la Biblia sí establece se omite.</p>
+  <p class="lang-en">This calendar’s rule: <strong>everything marked comes from a Bible text, cited</strong>; and whatever the Bible does not say is identified for what it is — later Hebrew calculation — never as a biblical command. Nothing the Bible does establish is omitted.</p>
+  <h4 class="subh"><span class="lang-es">Lo que la Biblia sí dice del tiempo y los meses</span><span class="lang-en">What the Bible does say about time and the months</span></h4>
+  <p class="verse"><span class="lang-es">“Y dijo Dios: Haya lumbreras en la expansión de los cielos para separar el día de la noche; y sean por señales, y para las estaciones, y para días y años.”</span><span class="lang-en">“And God said, Let there be lights in the firmament of the heaven to divide the day from the night; and let them be for signs, and for seasons, and for days, and years.”</span><cite>Génesis / Genesis 1:14</cite></p>
+  <p class="verse"><span class="lang-es">“Hizo la luna para los tiempos; El sol conoce su ocaso.”</span><span class="lang-en">“He appointed the moon for seasons: the sun knoweth his going down.”</span><cite>Salmo / Psalm 104:19</cite></p>
+  <p class="verse"><span class="lang-es">“Guardarás el mes de Abib, y harás pascua á Jehová tu Dios: porque en el mes de Abib te sacó Jehová tu Dios de Egipto de noche.”</span><span class="lang-en">“Observe the month of Abib, and keep the passover unto the LORD thy God: for in the month of Abib the LORD thy God brought thee forth out of Egypt by night.”</span><cite>Deuteronomio / Deuteronomy 16:1</cite></p>
+  <p class="verse"><span class="lang-es">“Habla á los hijos de Israel, y diles: Las fiestas solemnes de Jehová, las cuales proclamaréis por santas convocaciones, éstas son mis fiestas.”</span><span class="lang-en">“Speak unto the children of Israel, and say unto them, Concerning the feasts of the LORD, which ye shall proclaim to be holy convocations, even these are my feasts.”</span><cite>Levítico / Leviticus 23:2</cite></p>
+  <p class="lang-es">Y las fiestas quedan atadas a su estación: la de los ázimos <strong>“en el tiempo del mes de Abib”</strong>, la de la siega en su tiempo y la de la cosecha <strong>“á la salida del año”</strong> (Éxodo 23:15-16). Por eso el calendario no puede perder la primavera ni el otoño.</p>
+  <p class="lang-en">And the feasts are tied to their season: Unleavened Bread <strong>“at the time appointed of the month Abib,”</strong> the harvest feast in its time and the ingathering <strong>“at the end of the year”</strong> (Exodus 23:15-16). That is why the calendar cannot drift out of spring and autumn.</p>
+  <h4 class="subh"><span class="lang-es">Los nombres de los meses, tal como aparecen en la Biblia</span><span class="lang-en">The month names, exactly as they appear in the Bible</span></h4>
+  <p class="lang-es">En su totalidad, la Biblia <strong>nombra solo algunos meses</strong>; a los demás los llama por su número: «el mes cuarto», «el mes quinto»… Este calendario hace lo mismo: <strong>el número manda</strong>, y el nombre del calendario hebreo posterior se da solo para identificar el mes. <strong>¿Por qué cambiaron esos nombres?</strong> La razón completa — el cautiverio en Babilonia — está explicada paso por paso en la sección siguiente, <a href="#porque">«¿Por qué se hicieron los cambios?»</a>.</p>
+  <p class="lang-en">In its entirety, the Bible <strong>names only some months</strong>; the rest it calls by number: “the fourth month,” “the fifth month”… This calendar does the same: <strong>the number rules</strong>, and the later Hebrew calendar name is given only to identify the month.</p>
+  <table class="names">
+    <thead><tr><th>N.º</th><th><span class="lang-es">Nombre que la Biblia sí da</span><span class="lang-en">Name the Bible does give</span></th><th><span class="lang-es">Nombre posterior (no está como mes en la Biblia)</span><span class="lang-en">Later name (not in the Bible as a month)</span></th></tr></thead>
+    <tbody>
+      <tr><td><strong>1</strong></td><td><strong>Abib</strong> (Éxodo 13:4) · <strong>Nisán</strong> (Nehemías 2:1; Ester 3:7)</td><td>—</td></tr>
+      <tr><td><strong>2</strong></td><td><strong>Ziv</strong> (1 Reyes 6:1)</td><td>Iyar</td></tr>
+      <tr><td><strong>3</strong></td><td><strong>Siván</strong> (Ester 8:9)</td><td>—</td></tr>
+      <tr><td><strong>4</strong></td><td>Sin nombre: <strong>«el mes cuarto»</strong> (Jeremías 52:6)</td><td>Tamuz — en la Biblia, Tamuz es un ídolo (Ezequiel 8:14)</td></tr>
+      <tr><td><strong>5</strong></td><td>Sin nombre: <strong>«el mes quinto»</strong> (Esdras 7:8-9)</td><td>Av</td></tr>
+      <tr><td><strong>6</strong></td><td><strong>Elul</strong> (Nehemías 6:15)</td><td>—</td></tr>
+      <tr><td><strong>7</strong></td><td><strong>Etanim</strong> (1 Reyes 8:2)</td><td>Tishrei</td></tr>
+      <tr><td><strong>8</strong></td><td><strong>Bul</strong> (1 Reyes 6:38)</td><td>Jeshván</td></tr>
+      <tr><td><strong>9</strong></td><td><strong>Chisleu</strong> (Nehemías 1:1; Zacarías 7:1)</td><td>Kislev (misma raíz)</td></tr>
+      <tr><td><strong>10</strong></td><td><strong>Tebeth</strong> (Ester 2:16)</td><td>Tevet (misma raíz)</td></tr>
+      <tr><td><strong>11</strong></td><td><strong>Sebat</strong> (Zacarías 1:7)</td><td>Shevat (misma raíz)</td></tr>
+      <tr><td><strong>12</strong></td><td><strong>Adar</strong> (Ester 3:7)</td><td>Adar II — la Biblia no lo nombra: es del cálculo posterior</td></tr>
+    </tbody>
+  </table>
+  <h4 class="subh"><span class="lang-es">Lo que la Biblia menciona y antes no estaba señalado — ahora incluido</span><span class="lang-en">What the Bible mentions that was not marked before — now included</span></h4>
+  <ul class="events">
+    <li><strong><span class="lang-es">El sábado semanal</span><span class="lang-en">The weekly Sabbath</span></strong> — <span class="lang-es">es la primera de las fiestas de Levítico 23: «Seis días se trabajará, y al séptimo día sábado de reposo será, convocación santa» (Levítico 23:3). Por eso cada sábado está sombreado en las rejillas.</span><span class="lang-en">it is the first feast of Leviticus 23: “Six days shall work be done: but the seventh day is the sabbath of rest, an holy convocation” (Leviticus 23:3). That is why every Saturday is shaded in the grids.</span></li>
+    <li><strong><span class="lang-es">La Luna Nueva, principio de cada mes</span><span class="lang-en">The New Moon, beginning of each month</span></strong> — <span class="lang-es">«Y en los principios de vuestros meses ofreceréis en holocausto á Jehová…» (Números 28:11); «Y será que de mes en mes, y de sábado en sábado, vendrá toda carne á adorar delante de mí, dijo Jehová» (Isaías 66:23). El día 1 de cada mes ahora lleva su señal en la rejilla.</span><span class="lang-en">“And in the beginnings of your months ye shall offer a burnt offering unto the LORD…” (Numbers 28:11); “And it shall come to pass, that from one new moon to another, and from one sabbath to another, shall all flesh come to worship before me, saith the LORD” (Isaiah 66:23). Day 1 of every month now carries its mark in the grid.</span></li>
+    <li><strong><span class="lang-es">Las Primicias</span><span class="lang-en">Firstfruits</span></strong> — <span class="lang-es">la gavilla mecida «el día siguiente del sábado» durante los Ázimos (Levítico 23:10-11); desde ahí se cuentan los cincuenta días hasta Shavuot (Levítico 23:15-16). Señalada el 16 de Nisán, como la cuenta el calendario hebreo.</span><span class="lang-en">the sheaf waved “on the morrow after the sabbath” during Unleavened Bread (Leviticus 23:10-11); from there the fifty days to Shavuot are counted (Leviticus 23:15-16). Marked on 16 Nisan, as the Hebrew calendar counts it.</span></li>
+    <li><strong><span class="lang-es">Los ayunos mencionados por Zacarías</span><span class="lang-en">The fasts mentioned by Zechariah</span></strong> — <span class="lang-es">«El ayuno del cuarto mes, y el ayuno del quinto, y el ayuno del séptimo, y el ayuno del décimo, se tornarán á la casa de Judá en gozo y alegría, y en festivas solemnidades» (Zacarías 8:19). La Biblia los menciona pero <strong>no da sus días</strong>: por eso cada uno está puesto en su mes — el cuarto, el quinto, el séptimo y el décimo — dentro de ese mes y sin día exacto, sin inventar fechas en la rejilla.</span><span class="lang-en">“The fast of the fourth month, and the fast of the fifth, and the fast of the seventh, and the fast of the tenth, shall be to the house of Judah joy and gladness, and cheerful feasts” (Zechariah 8:19). The Bible mentions them but <strong>does not give their days</strong>: so each one is placed in its month — the fourth, the fifth, the seventh and the tenth — within that month and with no exact day, with no invented dates in the grid.</span></li>
+    <li><strong><span class="lang-es">La fiesta de la Dedicación</span><span class="lang-en">The Feast of the Dedication</span></strong> — <span class="lang-es">sí se menciona en el Nuevo Testamento: «Y se celebraba en Jerusalem la fiesta de la dedicación: y era invierno; y Jesús andaba en el templo por el portal de Salomón» (Juan 10:22-23). Pero la Biblia <strong>no la manda en Levítico 23 ni le da fecha allí</strong>; el 25 de Kislev viene de la historia posterior (1 Macabeos, fuera del canon de Reina-Valera 1909 y King James). Por eso está puesta en <strong>Kislev, el mes de invierno, sin día exacto</strong>, y no se señala como fiesta mandada.</span><span class="lang-en">it is mentioned in the New Testament: “And it was at Jerusalem the feast of the dedication, and it was winter. And Jesus walked in the temple in Solomon's porch” (John 10:22-23). But the Bible <strong>does not command it in Leviticus 23 nor date it there</strong>; 25 Kislev comes from later history (1 Maccabees, outside the Reina-Valera 1909 and King James canon). So it is placed in <strong>Kislev, the winter month, with no exact day</strong>, and not marked as a commanded feast.</span></li>
+    <li><strong><span class="lang-es">El año sabático y el Jubileo</span><span class="lang-en">The Sabbatical year and the Jubilee</span></strong> — <span class="lang-es">«Pero el séptimo año la tierra tendrá sábado de holganza, sábado á Jehová» (Levítico 25:4); «Y santificaréis el año cincuenta, y pregonaréis libertad en la tierra á todos sus moradores: este os será jubileo» (Levítico 25:10). Son ciclos de años, no fechas de un año: el Jubileo se pregonaba el día de la Expiación, en el mes séptimo (Levítico 25:9).</span><span class="lang-en">“But in the seventh year shall be a sabbath of rest unto the land, a sabbath for the LORD” (Leviticus 25:4); “And ye shall hallow the fiftieth year, and proclaim liberty throughout all the land unto all the inhabitants thereof: it shall be a jubilee unto you” (Leviticus 25:10). They are cycles of years, not dates within a year: the Jubilee was proclaimed on the Day of Atonement, in the seventh month (Leviticus 25:9).</span></li>
+  </ul>
+</section>
+
+<section class="card note" id="porque">
+  <h3><span class="lang-es">¿Por qué se hicieron los cambios? — Por qué cambiaron los nombres de los meses y por qué vino el cálculo</span><span class="lang-en">Why were the changes made? — Why the month names changed and why the calculation came</span></h3>
+  <p class="lang-es">Mucha gente se pregunta: si al principio un mes se llamaba <strong>Abib</strong>, ¿por qué después se llama <strong>Nisán</strong>? ¿Quién cambió los nombres, cuándo pasó y por qué? Aquí está la explicación clara, paso por paso, para que nadie se confunda con los meses.</p>
+  <p class="lang-en">Many people ask: if at first a month was called <strong>Abib</strong>, why is it later called <strong>Nisan</strong>? Who changed the names, when did it happen, and why? Here is the clear explanation, step by step, so no one is confused about the months.</p>
+
+  <div class="why-summary">
+    <p class="lang-es"><strong>En resumen, en una sola idea:</strong> Dios no cambió los meses ni cambió las fiestas. Lo que cambió fue la vida del pueblo. Israel fue llevado <strong>cautivo a Babilonia</strong>, vivió allí unos <strong>70 años</strong> y aprendió los nombres de los meses que se usaban en Babilonia. Cuando volvió a su tierra, esos nombres ya se habían quedado en el habla y en los documentos, y por eso aparecen en los libros escritos después del regreso. <strong>Es el mismo mes, en el mismo lugar del año y con la misma fiesta — solo cambió el nombre con que la gente lo llamaba.</strong></p>
+    <p class="lang-en"><strong>In short, in one single idea:</strong> God did not change the months or change the feasts. What changed was the life of the people. Israel was taken <strong>captive to Babylon</strong>, lived there some <strong>70 years</strong>, and learned the month names used in Babylon. When it returned to its land, those names had already stuck in speech and in documents, and that is why they appear in the books written after the return. <strong>It is the same month, in the same place in the year and with the same feast — only the name people called it by changed.</strong></p>
+  </div>
+
+  <div class="why-step">
+    <div class="why-num">1</div>
+    <div class="why-step-body">
+      <h4><span class="lang-es">Al principio: los meses iban por número</span><span class="lang-en">At first: the months went by number</span></h4>
+      <p class="lang-es">Al salir de Egipto, Dios fijó el orden: «Este mes os será principio de los meses» (Éxodo 12:2). Desde ahí la Biblia cuenta <strong>mes primero, mes segundo, mes tercero…</strong> y solo da nombre a cuatro meses de ese tiempo antiguo: <strong>Abib</strong> (mes 1), <strong>Ziv</strong> (mes 2), <strong>Etanim</strong> (mes 7) y <strong>Bul</strong> (mes 8). Los demás no tenían nombre en el texto: eran simplemente «el mes cuarto», «el mes quinto», y así.</p>
+      <p class="lang-en">On leaving Egypt, God set the order: “This month shall be unto you the beginning of months” (Exodus 12:2). From there the Bible counts <strong>first month, second month, third month…</strong> and names only four months from that early time: <strong>Abib</strong> (month 1), <strong>Ziv</strong> (month 2), <strong>Ethanim</strong> (month 7) and <strong>Bul</strong> (month 8). The rest had no name in the text: they were simply “the fourth month,” “the fifth month,” and so on.</p>
+    </div>
+  </div>
+
+  <div class="why-step">
+    <div class="why-num">2</div>
+    <div class="why-step-body">
+      <h4><span class="lang-es">Qué pasó: el cautiverio en Babilonia</span><span class="lang-en">What happened: the captivity in Babylon</span></h4>
+      <p class="lang-es">Los profetas habían avisado por años que, si el pueblo seguía en desobediencia e idolatría, perdería su tierra (2 Crónicas 36:15-16). Pasó así: el rey de Babilonia destruyó Jerusalem y el templo, y se llevó al pueblo cautivo a Babilonia. Allí estuvieron hasta cumplir <strong>los setenta años</strong> que Jeremías había anunciado.</p>
+      <p class="lang-en">The prophets had warned for years that if the people kept on in disobedience and idolatry, they would lose their land (2 Chronicles 36:15-16). It happened just so: the king of Babylon destroyed Jerusalem and the temple, and carried the people captive to Babylon. There they remained until <strong>the seventy years</strong> Jeremiah had announced were fulfilled.</p>
+      <p class="verse"><span class="lang-es">“Porque así dijo Jehová: Cuando en Babilonia se cumplieren los setenta años, yo os visitaré, y despertaré sobre vosotros mi buena palabra, para tornaros á este lugar.”</span><span class="lang-en">“For thus saith the LORD, That after seventy years be accomplished at Babylon I will visit you, and perform my good word toward you, in causing you to return to this place.”</span><cite>Jeremías / Jeremiah 29:10</cite></p>
+      <p class="lang-es">Piénsalo en la vida diaria: <strong>70 años son dos o tres generaciones</strong>. Los abuelos llegaron como cautivos, pero los hijos y los nietos <strong>nacieron en Babilonia</strong>, fueron a trabajar allí, firmaban papeles allí y fechaban todo con el calendario oficial de Babilonia. Ese calendario tenía sus propios nombres de mes, muy parecidos a los que hoy conocemos: de <em>Nisannu</em> salió <strong>Nisán</strong>, de <em>Ayaru</em> salió <strong>Iyar</strong>, de <em>Simanu</em> salió <strong>Siván</strong>, de <em>Ululu</em> salió <strong>Elul</strong>, de <em>Kislimu</em> salió <strong>Kislev</strong>, y así con los demás. No fue un decreto para cambiar la Biblia: fue la costumbre que el pueblo aprendió viviendo en otro país.</p>
+      <p class="lang-en">Think of it in daily life: <strong>70 years are two or three generations</strong>. The grandparents arrived as captives, but the children and grandchildren were <strong>born in Babylon</strong>, went to work there, signed papers there, and dated everything with Babylon’s official calendar. That calendar had its own month names, very similar to the ones known today: from <em>Nisannu</em> came <strong>Nisan</strong>, from <em>Ayaru</em> came <strong>Iyar</strong>, from <em>Simanu</em> came <strong>Sivan</strong>, from <em>Ululu</em> came <strong>Elul</strong>, from <em>Kislimu</em> came <strong>Kislev</strong>, and so on with the rest. It was not a decree to change the Bible: it was the habit the people learned while living in another country.</p>
+    </div>
+  </div>
+
+  <div class="why-step">
+    <div class="why-num">3</div>
+    <div class="why-step-body">
+      <h4><span class="lang-es">Al volver: los libros nuevos ya usan los nombres nuevos</span><span class="lang-en">On returning: the new books already use the new names</span></h4>
+      <p class="lang-es">Cumplidos los 70 años, Dios movió el corazón del rey Ciro para dejarlos volver (Esdras 1:1-3). Volvieron con Esdras y Nehemías, y Ester vivió su historia en el imperio que vino después. Por eso <strong>los libros escritos en ese tiempo — Nehemías, Ester, Esdras y Zacarías — son los que traen Nisán, Siván, Elul, Chisleu, Tebeth, Sebat y Adar</strong>. No es casualidad: fueron escritos por gente que había vivido el cautiverio o acababa de salir de él.</p>
+      <p class="lang-en">When the 70 years were fulfilled, God stirred the heart of King Cyrus to let them return (Ezra 1:1-3). They returned with Ezra and Nehemiah, and Esther lived her story in the empire that came after. That is why <strong>the books written at that time — Nehemiah, Esther, Ezra and Zechariah — are the ones that bring Nisan, Sivan, Elul, Chisleu, Tebeth, Sebat and Adar</strong>. It is no coincidence: they were written by people who had lived the captivity or had just come out of it.</p>
+      <p class="lang-es">Y fíjate en el detalle que lo aclara todo: esos libros <strong>no botaron el número</strong>. Siguen diciendo el número y al lado ponen el nombre nuevo, como quien dice «es el mismo mes, con el nombre que ahora se usa». Ejemplos: «en el mes undécimo, que es el mes de Sebat» (Zacarías 1:7) y «en el mes primero, que es el mes de Nisán» (Ester 3:7). <strong>El número manda; el nombre solo identifica.</strong></p>
+      <p class="lang-en">And notice the detail that makes it all clear: those books <strong>did not throw away the number</strong>. They still give the number and put the new name beside it, as if saying “it is the same month, with the name now in use.” Examples: “in the eleventh month, which is the month Sebat” (Zechariah 1:7) and “in the first month, that is, the month Nisan” (Esther 3:7). <strong>The number rules; the name only identifies.</strong></p>
+    </div>
+  </div>
+
+  <div class="why-step">
+    <div class="why-num">4</div>
+    <div class="why-step-body">
+      <h4><span class="lang-es">Lo más importante: es el mismo mes, no otro mes</span><span class="lang-en">The most important thing: it is the same month, not another month</span></h4>
+      <p class="lang-es">Que nadie piense que Nisán es un mes distinto de Abib, o que se movió la Pascua. <strong>No se movió nada:</strong> no cambió el orden, no cambió el día de ninguna fiesta y no cambió la estación. Solo cambió la etiqueta.</p>
+      <p class="lang-en">Let no one think Nisan is a different month from Abib, or that Passover was moved. <strong>Nothing was moved:</strong> the order did not change, the day of any feast did not change, and the season did not change. Only the label changed.</p>
+      <div class="same-month">
+        <div><strong><span class="lang-es">Mes 1: Abib = Nisán</span><span class="lang-en">Month 1: Abib = Nisan</span></strong><br><span class="lang-es">El mismo mes de la Pascua, día 14, en primavera. Antes del cautiverio se le dice Abib; después, Nisán.</span><span class="lang-en">The same Passover month, day 14, in spring. Before the captivity it is called Abib; afterwards, Nisan.</span></div>
+        <div><strong><span class="lang-es">Mes 2: Ziv = Iyar</span><span class="lang-en">Month 2: Ziv = Iyar</span></strong><br><span class="lang-es">El mes en que Salomón comenzó el templo (1 Reyes 6:1). Iyar es el nombre aprendido en Babilonia.</span><span class="lang-en">The month in which Solomon began the temple (1 Kings 6:1). Iyar is the name learned in Babylon.</span></div>
+        <div><strong><span class="lang-es">Mes 7: Etanim = Tishrei</span><span class="lang-en">Month 7: Ethanim = Tishrei</span></strong><br><span class="lang-es">El mes de Trompetas, Expiación y Tabernáculos. Tishrei es nombre posterior; Etanim es el de 1 Reyes 8:2.</span><span class="lang-en">The month of Trumpets, Atonement and Tabernacles. Tishrei is a later name; Ethanim is the one in 1 Kings 8:2.</span></div>
+        <div><strong><span class="lang-es">Mes 8: Bul = Jeshván</span><span class="lang-en">Month 8: Bul = Cheshvan</span></strong><br><span class="lang-es">El mes en que se terminó el templo (1 Reyes 6:38). Jeshván es nombre posterior; Bul es el bíblico antiguo.</span><span class="lang-en">The month in which the temple was finished (1 Kings 6:38). Cheshvan is a later name; Bul is the early biblical one.</span></div>
+      </div>
+      <p class="lang-es">Y los meses 4 y 5 explican lo mismo al revés: como <strong>nunca tuvieron nombre antiguo</strong>, la Biblia los deja solo por número — «el mes cuarto», «el mes quinto» — y los nombres Tamuz y Av llegaron después, con la misma influencia de Babilonia. Por eso en la tabla de arriba esos dos nombres van en la columna de «nombre posterior».</p>
+      <p class="lang-en">And months 4 and 5 show the same thing in reverse: since they <strong>never had an early name</strong>, the Bible leaves them by number only — “the fourth month,” “the fifth month” — and the names Tammuz and Av arrived later, with that same Babylonian influence. That is why, in the table above, those two names sit in the “later name” column.</p>
+    </div>
+  </div>
+
+  <div class="why-step">
+    <div class="why-num">5</div>
+    <div class="why-step-body">
+      <h4><span class="lang-es">Por qué después vino el otro cambio: el cálculo (Adar extra y meses de 29 o 30 días)</span><span class="lang-en">Why the other change came later: the calculation (the extra Adar and 29- or 30-day months)</span></h4>
+      <p class="lang-es">Al principio el mes se anunciaba <strong>viendo la luna nueva</strong> y se revisaba si la cebada ya estaba en espiga — <em>abib</em> — para que la Pascua cayera en primavera. Eso funcionaba mientras el pueblo vivía junto, en su tierra, con el templo en pie.</p>
+      <p class="lang-en">At first the month was announced by <strong>watching for the new moon</strong>, and whether the barley was already in the ear — <em>abib</em> — was checked, so Passover would fall in spring. That worked while the people lived together, in their land, with the temple standing.</p>
+      <p class="lang-es">Pero el año de la luna tiene unos <strong>354 días</strong> y el año del sol unos <strong>365</strong>: faltan como 11 días cada año. Sin corregir, en pocos años la Pascua saldría de la primavera, contra el mandato de guardarla «en el mes de Abib» (Deuteronomio 16:1). La corrección fue <strong>agregar un mes entero de vez en cuando</strong> — el que hoy se conoce como Adar I, dejando el Adar de Purim como Adar II.</p>
+      <p class="lang-en">But the lunar year has about <strong>354 days</strong> and the solar year about <strong>365</strong>: some 11 days are missing each year. Uncorrected, within a few years Passover would drift out of spring, against the command to keep it “in the month of Abib” (Deuteronomy 16:1). The correction was to <strong>add a whole month from time to time</strong> — the one known today as Adar I, leaving the Adar of Purim as Adar II.</p>
+      <p class="lang-es">Con el tiempo el pueblo quedó <strong>disperso por muchos países</strong> y ya no había una sola autoridad que anunciara la luna nueva a todos el mismo día. Para que todos celebraran las fiestas <strong>el mismo día, estuvieran donde estuvieran</strong>, ese anuncio por observación se sustituyó por un <strong>cálculo fijo</strong>: el ciclo de 19 años con 7 años de 13 meses, y el ajuste de Jeshván y Kislev a 29 o 30 días según el año. Por eso es importante decirlo como es: <strong>ese cálculo es una herramienta humana posterior, hecha para poder guardar lo que la Biblia sí manda — no es un mandamiento nuevo ni cambia ninguna fiesta</strong>.</p>
+      <p class="lang-en">In time the people were left <strong>scattered across many countries</strong>, and there was no longer a single authority to announce the new moon to everyone on the same day. So that all would keep the feasts <strong>on the same day, wherever they were</strong>, that announcement by observation was replaced by a <strong>fixed calculation</strong>: the 19-year cycle with 7 years of 13 months, and the adjustment of Cheshvan and Kislev to 29 or 30 days by year. That is why it matters to say it as it is: <strong>that calculation is a later human tool, made so what the Bible does command could be kept — it is not a new command and it changes no feast</strong>.</p>
+    </div>
+  </div>
+
+  <h4 class="subh"><span class="lang-es">Y por eso esta página también cambió — para que se vea la diferencia</span><span class="lang-en">And that is why this page changed too — so the difference can be seen</span></h4>
+  <p class="lang-es">Al principio, este calendario mezclaba en un mismo lugar lo bíblico y lo posterior, y eso confundía: parecía que todo venía de la Biblia. Se hicieron estos cambios, cada uno por una razón:</p>
+  <p class="lang-en">At first, this calendar mixed the biblical and the later in one place, and that was confusing: it looked as if everything came from the Bible. These changes were made, each for a reason:</p>
+  <ul class="why-list">
+    <li><strong><span class="lang-es">Se separó en dos vistas, Estricta y Calculada</span><span class="lang-en">It was split into two views, Strict and Calculated</span></strong> — <span class="lang-es">para que cada persona vea la diferencia: la Estricta trae solo lo que la Biblia dice, por número y por día bíblico; la Calculada añade el cálculo posterior para poder saber qué día es hoy. Nada se esconde: se muestra qué es cada cosa.</span><span class="lang-en">so each person can see the difference: the Strict view brings only what the Bible says, by number and by biblical day; the Calculated view adds the later calculation so today’s day can be known. Nothing is hidden: what each thing is, is shown.</span></li>
+    <li><strong><span class="lang-es">Cada mes lleva el número primero y el nombre después</span><span class="lang-en">Each month carries its number first and its name after</span></strong> — <span class="lang-es">porque así lo hace la Biblia misma después del cautiverio (Zacarías 1:7), y porque el número es lo que nunca cambió, aunque el nombre sí.</span><span class="lang-en">because the Bible itself does so after the captivity (Zechariah 1:7), and because the number is what never changed, even though the name did.</span></li>
+    <li><strong><span class="lang-es">Los nombres posteriores van marcados como posteriores</span><span class="lang-en">The later names are marked as later</span></strong> — <span class="lang-es">Iyar, Tamuz, Av, Tishrei y Jeshván no aparecen como nombres de mes en el texto antiguo; decirlo claro evita que alguien los tome por nombres dados por Dios en Éxodo.</span><span class="lang-en">Iyar, Tammuz, Av, Tishrei and Cheshvan do not appear as month names in the early text; saying so plainly keeps anyone from taking them for names given by God in Exodus.</span></li>
+    <li><strong><span class="lang-es">Lo que no tiene día exacto quedó sin día exacto</span><span class="lang-en">What has no exact day was left with no exact day</span></strong> — <span class="lang-es">los ayunos de Zacarías 8:19 van en su mes (cuarto, quinto, séptimo y décimo) y la Dedicación cerca del invierno (Juan 10:22), porque la Biblia da el mes o la estación, pero no el día. Ponerles un día sería inventarlo, y aquí no se inventan fechas.</span><span class="lang-en">Zechariah 8:19’s fasts go in their month (fourth, fifth, seventh and tenth) and the Dedication near winter (John 10:22), because the Bible gives the month or the season, but not the day. Giving them a day would mean inventing it, and no dates are invented here.</span></li>
+    <li><strong><span class="lang-es">Adar II se explica como parte del cálculo, no como mes bíblico</span><span class="lang-en">Adar II is explained as part of the calculation, not as a biblical month</span></strong> — <span class="lang-es">la Biblia habla de un solo Adar, el mes 12. El mes agregado existe para que la Pascua no salga de Abib ni de la primavera, como se explicó en el paso 5.</span><span class="lang-en">the Bible speaks of a single Adar, month 12. The added month exists so Passover does not leave Abib or the spring, as explained in step 5.</span></li>
+  </ul>
+  <p class="lang-es"><strong>Si solo recuerdas una cosa, que sea esta:</strong> el mes se conoce por su <strong>número</strong> y por su <strong>fiesta</strong>. El nombre puede variar según la época — Abib antes del cautiverio, Nisán después — pero es el mismo mes que Dios puso primero en Éxodo 12:2.</p>
+  <p class="lang-en"><strong>If you remember only one thing, let it be this:</strong> a month is known by its <strong>number</strong> and by its <strong>feast</strong>. The name can vary by era — Abib before the captivity, Nisan after — but it is the same month God set first in Exodus 12:2.</p>
+</section>
+
+<section class="card note" id="doble">
+  <h3><span class="lang-es">El doble inicio del año: Nisán y Tishrei</span><span class="lang-en">The year’s double beginning: Nisan and Tishrei</span></h3>
+  <p class="lang-es">La Biblia ordena que el año de las fiestas empiece en <strong>Nisán</strong>: «Este mes os será principio de los meses» (Éxodo 12:2). Por eso aquí los meses se numeran desde Nisán: Nisán es el mes 1 y Adar el 12. Pero en el calendario hebreo el <strong>número del año cambia en Tishrei</strong>, el mes 7 — el conteo civil — y por eso la Fiesta de las Trompetas del 1 de Tishrei también se conoce con el nombre posterior de «Año Nuevo» (Rosh Hashaná). No son dos años distintos: es el mismo año contado desde dos puntos. <strong>Confusión común:</strong> los meses 7 al 12 de este calendario ya caen, en el conteo civil, en el año hebreo siguiente, aunque para las fiestas siguen siendo el mismo año que empezó en Nisán.</p>
+  <p class="lang-en">The Bible commands that the year of the feasts begin in <strong>Nisan</strong>: “This month shall be unto you the beginning of months” (Exodus 12:2). That is why the months here are numbered from Nisan: Nisan is month 1 and Adar is 12. But in the Hebrew calendar the <strong>year number changes at Tishrei</strong>, month 7 — the civil reckoning — and so the Feast of Trumpets on 1 Tishrei is also known by the later name “New Year” (Rosh Hashanah). They are not two different years: it is the same year counted from two points. <strong>Common confusion:</strong> months 7 to 12 of this calendar already fall, in the civil reckoning, in the following Hebrew year, even though for the feasts they are still the same year that began in Nisan.</p>
+  <hr class="divider-lang">
+  <p class="lang-es"><strong>A nivel de año, sin día exacto:</strong> la Biblia también manda el <strong>año sabático</strong>, cada séptimo año (Levítico 25:4), y el <strong>Jubileo</strong>, el año cincuenta (Levítico 25:10). Son ciclos de años completos, no fiestas de un día, y la Biblia no da un ancla segura para contarlos hasta hoy: por eso se presentan a nivel de año, sin asignarles un día ni un año concreto.</p>
+  <p class="lang-en"><strong>At year level, with no exact day:</strong> the Bible also commands the <strong>sabbatical year</strong>, every seventh year (Leviticus 25:4), and the <strong>Jubilee</strong>, the fiftieth year (Leviticus 25:10). They are cycles of whole years, not one-day feasts, and the Bible gives no certain anchor for counting them down to today: so they are presented at year level, with no day and no specific year assigned.</p>
+</section>
+
+<section class="card note" id="lunanueva">
+  <h3><span class="lang-es">La Luna Nueva en detalle — el día 1 de cada mes</span><span class="lang-en">The New Moon in detail — day 1 of every month</span></h3>
+  <p class="lang-es">Cada mes bíblico empieza con la Luna Nueva, y la Biblia lo trata como día señalado, no solo como etiqueta del día 1. En Números 28:11-15 Jehová manda para los principios de mes un holocausto de <strong>dos becerros, un carnero y siete corderos de un año</strong>, con su presente de flor de harina amasada con aceite y sus libaciones de vino, y además <strong>un macho cabrío como expiación</strong>, fuera del holocausto continuo. Ese día también se tocaban las trompetas (Números 10:10), y el profeta lo pone junto al sábado como tiempo de adoración: «Y será que de mes en mes, y de sábado en sábado, vendrá toda carne á adorar delante de mí, dijo Jehová» (Isaías 66:23). En el Nuevo Testamento se menciona entre las cosas que eran sombra de lo por venir (Colosenses 2:16-17). En cada rejilla de abajo, el día 1 lleva su señal y la fecha exacta de ese mes.</p>
+  <p class="lang-en">Every biblical month begins with the New Moon, and the Bible treats it as an appointed day, not just a label on day 1. In Numbers 28:11-15 the LORD commands for the beginnings of months a burnt offering of <strong>two young bullocks, one ram and seven lambs of the first year</strong>, with their meat offering of flour mingled with oil and their drink offerings of wine, and also <strong>one kid of the goats as a sin offering</strong>, besides the continual burnt offering. The trumpets were also blown on that day (Numbers 10:10), and the prophet sets it beside the Sabbath as a time of worship: “And it shall come to pass, that from one new moon to another, and from one sabbath to another, shall all flesh come to worship before me, saith the LORD” (Isaiah 66:23). In the New Testament it is mentioned among the things that were a shadow of things to come (Colossians 2:16-17). In every grid below, day 1 carries its mark and that month’s exact date.</p>
+</section>
+
+<section class="card note" id="omer">
+  <h3><span class="lang-es">El Conteo del Ómer — 49 días de Primicias a Shavuot</span><span class="lang-en">Counting the Omer — 49 days from Firstfruits to Shavuot</span></h3>
+  <p class="verse"><span class="lang-es">“Hasta el siguiente día del sábado séptimo contaréis cincuenta días; entonces ofreceréis nuevo presente á Jehová.”</span><span class="lang-en">“Even unto the morrow after the seventh sabbath shall ye number fifty days; and ye shall offer a new meat offering unto the LORD.”</span><cite>Levítico / Leviticus 23:16</cite></p>
+  <p class="lang-es">Desde el día de las <strong>Primicias, 16 de Nisán</strong>, se cuentan <strong>siete semanas cumplidas: 49 días</strong> de Ómer (Levítico 23:15), y el día cincuenta es <strong>Shavuot</strong>. En las rejillas, cada día de la cuenta lleva su número: «Ómer 1», «Ómer 2»… hasta «Ómer 49». Aquí están las siete semanas de este año:</p>
+  <p class="lang-en">From the day of <strong>Firstfruits, 16 Nisan</strong>, <strong>seven full weeks are counted: 49 days</strong> of the Omer (Leviticus 23:15), and the fiftieth day is <strong>Shavuot</strong>. In the grids, every day of the count carries its number: “Omer 1,” “Omer 2”… up to “Omer 49.” Here are this year’s seven weeks:</p>
+  <div id="omerWeeks" class="calc-only"><p>…</p></div>
+  <p class="strict-only"><span class="lang-es"><strong>La cuenta, solo con días bíblicos:</strong> día 16 del mes primero = Ómer 1 · el mes segundo entero sigue la cuenta · día 5 del mes tercero = Ómer 49 · <strong>día 6 del mes tercero = día 50, Shavuot</strong> (Levítico 23:15-16). Sin fechas de hoy: la cuenta se lleva día a día desde las Primicias.</span><span class="lang-en"><strong>The count, with biblical days only:</strong> day 16 of the first month = Omer 1 · the whole second month continues the count · day 5 of the third month = Omer 49 · <strong>day 6 of the third month = day 50, Shavuot</strong> (Leviticus 23:15-16). With no dates from today’s calendar: the count is kept day by day from Firstfruits.</span></p>
+</section>
+
+<section class="card note" id="nt">
+  <h3><span class="lang-es">El cumplimiento en el Nuevo Testamento</span><span class="lang-en">The fulfillment in the New Testament</span></h3>
+  <ul class="events">
+    <li><strong><span class="lang-es">Pascua → la crucifixión</span><span class="lang-en">Passover → the crucifixion</span></strong> — <span class="lang-es">Jesús fue crucificado en tiempo de Pascua (Mateo 26:2; Juan 19:14), y Pablo lo dice sin rodeos: «…porque nuestra pascua, que es Cristo, ya fué sacrificada por nosotros».</span><span class="lang-en">Jesus was crucified at Passover time (Matthew 26:2; John 19:14), and Paul says it plainly: “…for even Christ our passover is sacrificed for us.”</span> <em>(1 Corintios / 1 Corinthians 5:7)</em></li>
+    <li><strong><span class="lang-es">Primicias → la resurrección</span><span class="lang-en">Firstfruits → the resurrection</span></strong> — <span class="lang-es">«Mas ahora Cristo ha resucitado de los muertos; primicias de los que durmieron es hecho.» La resurrección cae en la fiesta de la gavilla mecida, el 16 de Nisán.</span><span class="lang-en">“But now is Christ risen from the dead, and become the firstfruits of them that slept.” The resurrection falls at the feast of the waved sheaf, 16 Nisan.</span> <em>(1 Corintios / 1 Corinthians 15:20)</em></li>
+    <li><strong><span class="lang-es">Shavuot → Pentecostés</span><span class="lang-en">Shavuot → Pentecost</span></strong> — <span class="lang-es">cumplidos los días de la cuenta del Ómer, «estaban todos unánimes juntos» cuando el Espíritu Santo descendió sobre los discípulos reunidos en Jerusalem.</span><span class="lang-en">when the days of the Omer count were fulfilled, “they were all with one accord in one place” when the Holy Spirit descended on the disciples gathered in Jerusalem.</span> <em>(Hechos / Acts 2:1)</em></li>
+  </ul>
+</section>
+
+<section class="card note calc-only" id="bisiesto">
+  <h3><span class="lang-es">Los días de cada mes y los años bisiestos — qué dice y qué no dice la Biblia</span><span class="lang-en">Each month’s days and leap years — what the Bible does and does not say</span></h3>
+  <p class="lang-es">La Biblia <strong>no trae una tabla con los días de cada mes</strong>. Lo que sí muestra es meses de treinta días en el relato del diluvio: del día 17 del mes segundo al día 17 del mes séptimo hay cinco meses, y las aguas prevalecieron <strong>ciento cincuenta días</strong> (Génesis 7:11, 24; 8:4) — cinco meses de treinta días. Las longitudes de 29 o 30 días que usa este calendario, mes por mes y año por año, salen del <strong>cálculo del calendario hebreo</strong>: la mayoría de los meses se alternan — uno de 30, el siguiente de 29 — pero <strong>Jeshván y Kislev cambian según el año</strong>: pueden tener 29 o 30 días cada uno. Por eso un año común tiene 353, 354 o 355 días.</p>
+  <p class="lang-en">The Bible <strong>does not give a table of each month’s days</strong>. What it does show is thirty-day months in the Flood account: from day 17 of the second month to day 17 of the seventh month is five months, and the waters prevailed <strong>one hundred and fifty days</strong> (Genesis 7:11, 24; 8:4) — five months of thirty days. The 29- or 30-day lengths this calendar uses, month by month and year by year, come from the <strong>Hebrew calendar calculation</strong>: most months alternate — one of 30, the next of 29 — but <strong>Cheshvan and Kislev change from year to year</strong>: each can have 29 or 30 days. That is why a common year has 353, 354 or 355 days.</p>
+  <hr class="divider-lang">
+  <p class="lang-es">La Biblia <strong>no menciona años bisiestos, ni un mes llamado Adar I o Adar II, ni un ciclo de 19 años</strong>. Ese sistema — siete años bisiestos en cada ciclo de 19, agregando <strong>Adar I</strong>, de 30 días, antes de Adar, que en esos años se llama Adar II — es un <strong>cálculo hebreo posterior</strong>. Su razón sí va de acuerdo con la Biblia: como el año lunar (~354 días) es más corto que el año solar (~365 días), sin agregar un mes de vez en cuando la Pascua saldría del mes de Abib y de la primavera, contra lo que manda Deuteronomio 16:1 y Éxodo 23:15-16. En los años bisiestos <strong>Purim se celebra en Adar II</strong>, no en Adar I. Esos años tienen 13 meses y 383, 384 o 385 días.</p>
+  <p class="lang-en">The Bible <strong>does not mention leap years, nor a month called Adar I or Adar II, nor a 19-year cycle</strong>. That system — seven leap years in every 19-year cycle, adding <strong>Adar I</strong>, 30 days, before Adar, which in those years is called Adar II — is a <strong>later Hebrew calculation</strong>. Its reason does agree with the Bible: since the lunar year (~354 days) is shorter than the solar year (~365 days), without adding a month now and then Passover would leave the month of Abib and the spring, against what Deuteronomy 16:1 and Exodus 23:15-16 command. In leap years <strong>Purim is kept in Adar II</strong>, not in Adar I. Those years have 13 months and 383, 384 or 385 days.</p>
+  <div class="facts" id="leapFacts"></div>
+</section>
+
+<h2 class="section strict-only"><span class="lang-es">Los doce meses, solo como los presenta la Biblia</span><span class="lang-en">The twelve months, only as the Bible presents them</span></h2>
+<p class="section-sub strict-only"><span class="lang-es">Por número, con el nombre solo cuando la Biblia lo da, y cada día señalado solo por su día bíblico.</span><span class="lang-en">By number, with a name only when the Bible gives one, and every appointed day by its biblical day only.</span></p>
+<div id="strictView" class="strict-only"></div>
+
+<h2 class="section calc-only"><span class="lang-es">Los meses de un vistazo</span><span class="lang-en">The months at a glance</span></h2>
+<p class="section-sub calc-only"><span class="lang-es">Toca un mes para ir a su calendario día por día. </span><span class="lang-en">Tap a month to go to its day-by-day calendar.</span></p>
+<section class="overview calc-only" id="overview"></section>
+
+<div id="months" class="calc-only"></div>
+
+<section class="card note calc-only">
+  <h3><span class="lang-es">Eventos fechados en la Biblia, por día</span><span class="lang-en">Events dated in the Bible, by day</span></h3>
+  <p><span class="lang-es">Además de las fiestas, la Biblia fecha otros hechos: el diluvio, el tabernáculo levantado, el templo comenzado en Ziv y terminado en Bul, la asamblea de Etanim, la muerte de Aarón, el decreto de Ester… Cada uno está en su mes, con su cita. Cuando la Biblia da solo el mes y no el día, así se dice: «en este mes», sin inventar el día. En cada rejilla, los días con evento llevan su señal dorada.</span><span class="lang-en">Besides the feasts, the Bible dates other events: the Flood, the tabernacle raised, the temple begun in Ziv and finished in Bul, the assembly of Ethanim, Aaron’s death, Esther’s edict… Each one is in its month, with its citation. When the Bible gives only the month and not the day, it says so: “in this month,” with no day invented. In every grid, days with an event carry a gold mark.</span></p>
+  <ul class="events" id="eventList"></ul>
+</section>
+
+<section class="card note calc-only">
+  <h3><span class="lang-es">Fiestas bíblicas de <span class="yr"></span></span><span class="lang-en">Biblical feasts of <span class="yr"></span></span></h3>
+  <p><span class="lang-es">Están señaladas todas las fiestas establecidas en la Biblia, sin obviar ninguna: las fiestas de Jehová de Levítico 23 completas — incluido el sábado semanal (23:3) y las Primicias (23:10-11) —, la Segunda Pascua de Números 9, Purim de Ester 9 y la Luna Nueva de cada mes (Números 28:11). Y lo que la Biblia menciona <strong>sin dar día</strong> también está, puesto en su mes y sin día exacto: los ayunos del cuarto, quinto, séptimo y décimo mes (Zacarías 8:19) y la Dedicación en invierno (Juan 10:22); el año sabático y el Jubileo van a nivel de año.</span><span class="lang-en">All the feasts established in the Bible are marked, omitting none: the complete feasts of the LORD in Leviticus 23 — including the weekly Sabbath (23:3) and Firstfruits (23:10-11) — the Second Passover of Numbers 9, Purim in Esther 9 and each month’s New Moon (Numbers 28:11). And what the Bible mentions <strong>without giving a day</strong> is here too, placed in its month with no exact day: the fasts of the fourth, fifth, seventh and tenth months (Zechariah 8:19) and the Dedication in winter (John 10:22); the sabbatical year and the Jubilee are at year level.</span></p>
+  <ul class="events" id="feastList"></ul>
+  <ul class="events">
+    <li><strong><span class="lang-es">Sábado (Shabbat)</span><span class="lang-en">Sabbath (Shabbat)</span></strong> — <span class="lang-es">cada sábado, todo el año · Levítico 23:3 (sombreado en cada rejilla)</span><span class="lang-en">every Saturday, all year · Leviticus 23:3 (shaded in every grid)</span></li>
+    <li><strong><span class="lang-es">Luna Nueva</span><span class="lang-en">New Moon</span></strong> — <span class="lang-es">el día 1 de cada mes · Números 28:11 (señalada en cada rejilla)</span><span class="lang-en">day 1 of every month · Numbers 28:11 (marked in every grid)</span></li>
+    <li><strong><span class="lang-es">Año sabático y Jubileo</span><span class="lang-en">Sabbatical year and Jubilee</span></strong> — <span class="lang-es">cada séptimo año, y el año cincuenta · Levítico 25:4, 10 (ciclos de años; ver «Exacto a la Biblia»)</span><span class="lang-en">every seventh year, and the fiftieth year · Leviticus 25:4, 10 (cycles of years; see “Exactly as the Bible says”)</span></li>
+  </ul>
+</section>
+
+<footer>
+  <p><span class="lang-es"><strong>Cómo se calculan las fechas:</strong> la página toma el año en que estamos y calcula cada mes con el cálculo del calendario hebreo — la herramienta posterior que ubica en el calendario de hoy las fiestas que la Biblia manda — incluyendo los meses de 29 o 30 días según el año y el mes agregado Adar I en los años bisiestos. Al cambiar el año, todo se recalcula solo. Textos bíblicos: Reina-Valera 1909 (español) y King James Version (inglés).</span>
+  <span class="lang-en"><strong>How the dates are calculated:</strong> the page takes the current year and calculates each month with the Hebrew calendar calculation — the later tool that places on today’s calendar the feasts the Bible commands — including each month’s 29 or 30 days for that year and the added month Adar I in leap years. When the year changes, everything recalculates by itself. Bible texts: Reina-Valera 1909 (Spanish) and King James Version (English).</span></p>
+  <p><span class="lang-es">Nota: las fiestas comienzan al atardecer del día anterior. Lo que la Biblia no contiene en absoluto — Tu BiShvat, Lag BaOmer y Tu B'Av — no está señalado. La fiesta de la Dedicación sí se menciona en Juan 10:22, pero sin fecha mandada en la Biblia: se trata en la sección «Exacto a la Biblia, sin obviar nada». Los ayunos del cuarto, quinto, séptimo y décimo mes se mencionan en Zacarías 8:19 sin días dados, y así se presentan: nombrados, sin fechas inventadas.</span>
+  <span class="lang-en">Note: feasts begin at sunset the evening before. What the Bible does not contain at all — Tu Bishvat, Lag BaOmer and Tu B'Av — is not marked. The Feast of the Dedication is mentioned in John 10:22, but with no date commanded in the Bible: it is covered in the “Exactly as the Bible says, omitting nothing” section. The fasts of the fourth, fifth, seventh and tenth months are mentioned in Zechariah 8:19 with no days given, and are presented that way: named, with no invented dates.</span></p>
+</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+var INFO={
+nisan:{es:"Nisán",en:"Nisan",heb:"נִיסָן",akaEs:"También llamado Abib — Éxodo 13:4",akaEn:"Also called Abib — Exodus 13:4",grad:"linear-gradient(135deg,#2e6b34,#7a9a2e 55%,#c9a227)",themeEs:"Liberación y nuevo comienzo. En Nisán Israel salió de Egipto y celebró la primera Pascua. Es el principio de los meses.",themeEn:"Deliverance and a new beginning. In Nisan Israel left Egypt and kept the first Passover. It is the beginning of months.",verseEs:"Este mes os será principio de los meses; será este para vosotros el primero en los meses del año.",verseEn:"This month shall be unto you the beginning of months: it shall be the first month of the year to you.",cite:"Éxodo / Exodus 12:2",events:[[14,"Pascua · Passover"],[15,"Ázimos · Unleavened Bread"],[16,"Primicias · Firstfruits"],[16,"Ázimos · Unleavened Bread"],[17,"Ázimos · Unleavened Bread"],[18,"Ázimos · Unleavened Bread"],[19,"Ázimos · Unleavened Bread"],[20,"Ázimos · Unleavened Bread"],[21,"Ázimos · Unleavened Bread"]]},
+iyar:{es:"Iyar",en:"Iyar",heb:"אִיָּר",akaEs:"También llamado Ziv — 1 Reyes 6:1",akaEn:"Also called Ziv — 1 Kings 6:1",grad:"linear-gradient(135deg,#17695e,#3a9a8a 55%,#8fc7a8)",themeEs:"Provisión en el desierto y segunda oportunidad. El día quince del mes segundo Israel llegó al desierto de Sin, y allí Jehová le dio el maná (Éxodo 16:1). En este mes, el día catorce, se celebra la Segunda Pascua para quien no pudo guardarla en Nisán (Números 9:11).",themeEn:"Provision in the wilderness and a second chance. On the fifteenth day of the second month Israel came to the wilderness of Sin, and there the LORD gave the manna (Exodus 16:1). In this month, on the fourteenth day, the Second Passover is kept for whoever could not keep it in Nisan (Numbers 9:11).",verseEs:"Yo soy Jehová tu sanador.",verseEn:"I am the LORD that healeth thee.",cite:"Éxodo / Exodus 15:26",events:[[14,"Segunda Pascua · Second Passover"]]},
+sivan:{es:"Siván",en:"Sivan",heb:"סִיוָן",akaEs:"Mes de la entrega de la Torá — Éxodo 19:1",akaEn:"Month of the giving of the Torah — Exodus 19:1",grad:"linear-gradient(135deg,#4a3b2a,#8a6a2f 50%,#d98a2b)",themeEs:"La Palabra entregada. En Siván Israel recibió la Torá en el Sinaí y se celebra Shavuot; en este mismo tiempo vino el Espíritu Santo en Pentecostés.",themeEn:"The Word given. In Sivan Israel received the Torah at Sinai and Shavuot is kept; at this same season the Holy Spirit came at Pentecost.",verseEs:"En el mes tercero de la salida de los hijos de Israel de la tierra de Egipto, en el mismo día llegaron al desierto de Sinaí.",verseEn:"In the third month, when the children of Israel were gone forth out of the land of Egypt, the same day came they into the wilderness of Sinai.",cite:"Éxodo / Exodus 19:1",events:[[6,"Shavuot · Feast of Weeks"]]},
+tamuz:{es:"Tamuz",en:"Tammuz",heb:"תַּמּוּז",akaEs:"El mes cuarto de Jeremías 52:6 — la Biblia no le da nombre",akaEn:"The fourth month of Jeremiah 52:6 — the Bible gives it no name",grad:"linear-gradient(135deg,#8a3b12,#c46a1d 55%,#e0a83a)",themeEs:"El mes cuarto bajo sitio. La Biblia no da nombre a este mes: lo llama «el mes cuarto». En él, a los nueve días, el hambre prevaleció en Jerusalem sitiada (Jeremías 52:6), y Zacarías lo recuerda como el mes de uno de los ayunos (Zacarías 8:19). El nombre Tamuz viene del calendario hebreo posterior; en la Biblia, Tamuz es un ídolo por el que lloraban mujeres en el templo (Ezequiel 8:14).",themeEn:"The fourth month under siege. The Bible gives this month no name: it calls it 'the fourth month.' In it, on the ninth day, the famine was sore in besieged Jerusalem (Jeremiah 52:6), and Zechariah remembers it as the month of one of the fasts (Zechariah 8:19). The name Tammuz comes from the later Hebrew calendar; in the Bible, Tammuz is an idol women wept for in the temple (Ezekiel 8:14).",verseEs:"En el mes cuarto, á los nueve del mes, prevaleció el hambre en la ciudad, hasta no haber pan para el pueblo de la tierra.",verseEn:"And in the fourth month, in the ninth day of the month, the famine was sore in the city, so that there was no bread for the people of the land.",cite:"Jeremías / Jeremiah 52:6",events:[]},
+av:{es:"Av",en:"Av",heb:"אָב",akaEs:"El mes quinto de Esdras — Esdras 7:8-9",akaEn:"Ezra's fifth month — Ezra 7:8-9",grad:"linear-gradient(135deg,#37503a,#6b8a4a 55%,#c9a227)",themeEs:"El regreso de Esdras. En el mes quinto Esdras llegó a Jerusalem desde Babilonia, según la buena mano de su Dios sobre él, y enseñó la ley de Jehová al pueblo que volvía del cautiverio.",themeEn:"Ezra's return. In the fifth month Ezra came to Jerusalem from Babylon, according to the good hand of his God upon him, and taught the law of the LORD to the people returning from captivity.",verseEs:"Porque el día primero del primer mes fué el principio de la partida de Babilonia, y al primero del mes quinto llegó á Jerusalem, según la buena mano de su Dios sobre él.",verseEn:"For upon the first day of the first month began he to go up from Babylon, and on the first day of the fifth month came he to Jerusalem, according to the good hand of his God upon him.",cite:"Esdras / Ezra 7:9",events:[]},
+elul:{es:"Elul",en:"Elul",heb:"אֱלוּל",akaEs:"El muro de Jerusalem terminado el 25 de Elul — Nehemías 6:15",akaEn:"Jerusalem's wall finished on 25 Elul — Nehemiah 6:15",grad:"linear-gradient(135deg,#3f4a2a,#6b7a3a 55%,#a8a05a)",themeEs:"La obra terminada. En Elul, el día veinticinco, se acabó el muro de Jerusalem en cincuenta y dos días, y los enemigos conocieron que por Dios había sido hecha aquella obra (Nehemías 6:15-16). Así llega el mes sexto, antes de las fiestas del mes séptimo.",themeEn:"The work finished. In Elul, on the twenty and fifth day, the wall of Jerusalem was finished in fifty and two days, and the enemies perceived that this work was wrought of our God (Nehemiah 6:15-16). So comes the sixth month, before the feasts of the seventh month.",verseEs:"Acabóse pues el muro el veinticinco del mes de Elul, en cincuenta y dos días.",verseEn:"So the wall was finished in the twenty and fifth day of the month Elul, in fifty and two days.",cite:"Nehemías / Nehemiah 6:15",events:[]},
+tishri:{es:"Tishrei",en:"Tishrei",heb:"תִּשְׁרֵי",akaEs:"También llamado Etanim — 1 Reyes 8:2",akaEn:"Also called Ethanim — 1 Kings 8:2",grad:"linear-gradient(135deg,#6b1f2a,#9a4a1f 55%,#c9a227)",themeEs:"Trompetas, expiación y tabernáculos. El mes más santo en fiestas bíblicas: la Fiesta de las Trompetas, Yom Kippur, Sucot y el octavo día, todas señaladas en Levítico 23.",themeEn:"Trumpets, atonement and tabernacles. The richest month in biblical feasts: the Feast of Trumpets, Yom Kippur, Sukkot and the eighth day, all appointed in Leviticus 23.",verseEs:"Habla á los hijos de Israel, y diles: En el mes séptimo, al primero del mes tendréis sábado, una conmemoración al son de trompetas, y una santa convocación.",verseEn:"Speak unto the children of Israel, saying, In the seventh month, in the first day of the month, shall ye have a sabbath, a memorial of blowing of trumpets, an holy convocation.",cite:"Levítico / Leviticus 23:24",events:[[1,"Fiesta de las Trompetas · Feast of Trumpets"],[10,"Yom Kippur"],[15,"Sucot · Sukkot"],[16,"Sucot · Sukkot"],[17,"Sucot · Sukkot"],[18,"Sucot · Sukkot"],[19,"Sucot · Sukkot"],[20,"Sucot · Sukkot"],[21,"Sucot · Sukkot"],[22,"Sheminí Atzeret · Eighth Day"]]},
+heshvan:{es:"Jeshván",en:"Cheshvan",heb:"חֶשְׁוָן",akaEs:"También llamado Bul — 1 Reyes 6:38",akaEn:"Also called Bul — 1 Kings 6:38",grad:"linear-gradient(135deg,#2f4a5e,#4a7a8a 55%,#7aa8b5)",themeEs:"Lluvia y perseverancia. Jeshván no tiene fiestas: es un mes quieto de trabajo y oración por la lluvia. Contado como el segundo mes del año civil, en él comenzó el diluvio en días de Noé (Génesis 7:11). Es uno de los dos meses que cambian de días según el año: 29 o 30.",themeEn:"Rain and perseverance. Cheshvan has no feasts: it is a quiet month of work and prayer for rain. Counted as the second month of the civil year, in it the Flood began in Noah's days (Genesis 7:11). It is one of the two months whose length changes by year: 29 or 30 days.",verseEs:"En el año seiscientos de la vida de Noé, en el mes segundo, á los diez y siete días del mes, aquel día fueron rotas todas las fuentes del grande abismo, y las cataratas de los cielos fueron abiertas.",verseEn:"In the six hundredth year of Noah's life, in the second month, the seventeenth day of the month, the same day were all the fountains of the great deep broken up, and the windows of heaven were opened.",cite:"Génesis / Genesis 7:11 — 2.º mes civil / 2nd civil month",events:[]},
+kislev:{es:"Kislev",en:"Kislev",heb:"כִּסְלֵו",akaEs:"Mes de la oración de Nehemías — Nehemías 1:1",akaEn:"Month of Nehemiah's prayer — Nehemiah 1:1",grad:"linear-gradient(135deg,#16233f,#2b4a7a 55%,#c9a227)",themeEs:"Intercesión por Jerusalem. En el mes de Chisleu (Kislev), Nehemías oyó en Susán que el muro de Jerusalem estaba derribado, y lloró, e hizo duelo, ayunó y oró delante del Dios del cielo (Nehemías 1:1-4). Es uno de los dos meses que cambian de días según el año: 29 o 30.",themeEn:"Intercession for Jerusalem. In the month Chisleu (Kislev), Nehemiah heard in Shushan that Jerusalem's wall was broken down, and he sat down and wept, and mourned, and fasted, and prayed before the God of heaven (Nehemiah 1:1-4). It is one of the two months whose length changes by year: 29 or 30 days.",verseEs:"Palabras de Nehemías, hijo de Hachâlías. Y acaeció en el mes de Chisleu, en el año veinte, estando yo en Susán, capital del reino.",verseEn:"The words of Nehemiah the son of Hachaliah. And it came to pass in the month Chisleu, in the twentieth year, as I was in Shushan the palace.",cite:"Nehemías / Nehemiah 1:1",events:[]},
+tevet:{es:"Tevet",en:"Tevet",heb:"טֵבֵת",akaEs:"Mes décimo: Ester ante el rey — Ester 2:16",akaEn:"Tenth month: Esther before the king — Esther 2:16",grad:"linear-gradient(135deg,#3a4452,#5e748a 55%,#9db3c2)",themeEs:"Firmeza en el invierno. Ester fue llevada ante el rey Asuero en el mes de Tevet (Ester 2:16). Tevet siempre tiene 29 días.",themeEn:"Steadfastness in winter. Esther was brought to King Ahasuerus in the month of Tevet (Esther 2:16). Tevet always has 29 days.",verseEs:"Y fué Ester llevada al rey Assuero á su casa real en el mes décimo, que es el mes de Tebeth, en el año séptimo de su reinado.",verseEn:"So Esther was taken unto king Ahasuerus into his house royal in the tenth month, which is the month Tebeth, in the seventh year of his reign.",cite:"Ester / Esther 2:16",events:[]},
+shevat:{es:"Shevat",en:"Shevat",heb:"שְׁבָט",akaEs:"Mes en que Moisés explicó la ley — Deuteronomio 1:3",akaEn:"Month Moses explained the law — Deuteronomy 1:3",grad:"linear-gradient(135deg,#5e7a3a,#9ab86a 50%,#e8a8b8)",themeEs:"La ley explicada de nuevo. En Shevat Moisés comenzó a explicar la ley en Deuteronomio (Deuteronomio 1:3), antes de que Israel entrara en la tierra prometida.",themeEn:"The law explained again. In Shevat Moses began explaining the law in Deuteronomy (Deuteronomy 1:3), before Israel entered the promised land.",verseEs:"Y aconteció que á los cuarenta años, en el mes undécimo, al primero del mes, Moisés habló á los hijos de Israel conforme á todo lo que Jehová le había mandado acerca de ellos.",verseEn:"And it came to pass in the fortieth year, in the eleventh month, on the first day of the month, that Moses spake unto the children of Israel, according unto all that the LORD had given him in commandment unto them.",cite:"Deuteronomio / Deuteronomy 1:3",events:[]},
+adar:{es:"Adar",en:"Adar",heb:"אֲדָר",akaEs:"Mes de gozo y liberación — Ester",akaEn:"Month of joy and deliverance — Esther",grad:"linear-gradient(135deg,#6b2a5e,#9a3a6b 55%,#e0a83a)",themeEs:"El duelo convertido en gozo. En Adar, Ester y Mardoqueo vieron la liberación del pueblo y se instituyó Purim. Es el último mes del año bíblico, antes de volver a Nisán.",themeEn:"Sorrow turned to joy. In Adar, Esther and Mordecai saw the people's deliverance and Purim was established. It is the last month of the biblical year, before returning to Nisan.",verseEs:"El mes que les fué trocado de tristeza en alegría, y de luto en día bueno; para que los hiciesen días de banquete y de gozo.",verseEn:"The month which was turned unto them from sorrow to joy, and from mourning into a good day: that they should make them days of feasting and joy.",cite:"Ester / Esther 9:22",events:[[14,"Purim"],[15,"Purim en Susán · Shushan Purim"]]},
+adar1:{es:"Adar I",en:"Adar I",heb:"אֲדָר א׳",akaEs:"El mes agregado de los años bisiestos — Deuteronomio 16:1",akaEn:"The added month of leap years — Deuteronomy 16:1",grad:"linear-gradient(135deg,#4a2a5e,#7a3a7a 55%,#c9a227)",themeEs:"La Biblia no nombra este mes ni manda añadirlo: es parte del cálculo hebreo posterior. En los años bisiestos ese cálculo agrega este mes entero, de 30 días, para que la Pascua caiga siempre en primavera, en el mes de Abib, como manda Deuteronomio 16:1. Purim no se celebra en Adar I: se espera a Adar II.",themeEn:"The Bible does not name this month nor command adding it: it is part of the later Hebrew calculation. In leap years that calculation adds this whole month, 30 days, so Passover always falls in spring, in the month of Abib, as Deuteronomy 16:1 commands. Purim is not kept in Adar I: it waits for Adar II.",verseEs:"Guardarás el mes de Abib, y harás pascua á Jehová tu Dios: porque en el mes de Abib te sacó Jehová tu Dios de Egipto de noche.",verseEn:"Observe the month of Abib, and keep the passover unto the LORD thy God: for in the month of Abib the LORD thy God brought thee forth out of Egypt by night.",cite:"Deuteronomio / Deuteronomy 16:1",events:[]},
+adar2:{es:"Adar II",en:"Adar II",heb:"אֲדָר ב׳",akaEs:"Mes de Purim en los años bisiestos — Ester 9",akaEn:"Month of Purim in leap years — Esther 9",grad:"linear-gradient(135deg,#6b2a5e,#9a3a6b 55%,#e0a83a)",themeEs:"Purim en el año bisiesto. Cuando el año tiene dos Adar, Purim se celebra en este segundo Adar, los días 14 y 15, como ordenó Mardoqueo (Ester 9:21). Así el año bíblico cierra con gozo antes de volver a Nisán.",themeEn:"Purim in the leap year. When the year has two Adars, Purim is kept in this second Adar, on days 14 and 15, as Mordecai ordained (Esther 9:21). So the biblical year closes with joy before returning to Nisan.",verseEs:"El mes que les fué trocado de tristeza en alegría, y de luto en día bueno; para que los hiciesen días de banquete y de gozo.",verseEn:"The month which was turned unto them from sorrow to joy, and from mourning into a good day: that they should make them days of feasting and joy.",cite:"Ester / Esther 9:22",events:[[14,"Purim"],[15,"Purim en Susán · Shushan Purim"]]}
+};
+var KEYMAP={"Nisan":"nisan","Iyar":"iyar","Sivan":"sivan","Tamuz":"tamuz","Tammuz":"tamuz","Av":"av","Elul":"elul","Tishri":"tishri","Heshvan":"heshvan","Cheshvan":"heshvan","Kislev":"kislev","Tevet":"tevet","Shevat":"shevat","Adar":"adar","Adar I":"adar1","Adar II":"adar2"};
+var EVENTS={
+nisan:[
+ {d:1,short:"Tabernáculo · Tabernacle",es:"Moisés levanta el tabernáculo el día primero del mes primero. El mismo día del calendario, Noé quitó la cubierta del arca y vio que la tierra se había secado.",en:"Moses raises the tabernacle on the first day of the first month. On the same calendar day, Noah removed the covering of the ark and saw that the ground was dry.",cite:"Éxodo / Exodus 40:2, 17 · Génesis / Genesis 8:13"},
+ {d:10,short:"Cordero apartado · Lamb chosen",es:"El cordero de la Pascua se apartaba el día diez de este mes; y ese mismo día Israel subió del Jordán y acampó en Gilgal.",en:"The Passover lamb was chosen on the tenth day of this month; and on that same day Israel came up from the Jordan and camped at Gilgal.",cite:"Éxodo / Exodus 12:3 · Josué / Joshua 4:19"}
+],
+iyar:[
+ {d:2,short:"Templo comenzado · Temple begun",es:"Salomón comenzó a edificar el templo el día segundo del mes segundo, el mes de Ziv.",en:"Solomon began building the temple on the second day of the second month, the month Ziv.",cite:"2 Crónicas / 2 Chronicles 3:2 · 1 Reyes / 1 Kings 6:1"},
+ {d:15,short:"Desierto de Sin · Wilderness of Sin",es:"Israel llegó al desierto de Sin el día quince del mes segundo, y allí Jehová anunció el maná.",en:"Israel came to the wilderness of Sin on the fifteenth day of the second month, and there the LORD announced the manna.",cite:"Éxodo / Exodus 16:1, 4"}
+],
+sivan:[
+ {d:null,short:"",es:"Israel llegó al desierto de Sinaí en el mes tercero y allí recibió la ley; la Biblia dice «en el mismo día», sin numerarlo aparte de la llegada.",en:"Israel came to the wilderness of Sinai in the third month and there received the law; the Bible says “the same day,” without numbering it beyond the arrival.",cite:"Éxodo / Exodus 19:1"},
+ {d:23,short:"Decreto de Ester · Esther's edict",es:"El día veintitrés del mes tercero, Siván, se escribieron las cartas de Mardoqueo que salvaron a los judíos.",en:"On the twenty-third day of the third month, Sivan, Mordecai's letters that saved the Jews were written.",cite:"Ester / Esther 8:9"}
+],
+tamuz:[
+ {d:9,short:"Jerusalem sitiada · Jerusalem besieged",es:"El día nueve del mes cuarto prevaleció el hambre en Jerusalem sitiada, y la ciudad fue abierta brecha.",en:"On the ninth day of the fourth month the famine was sore in besieged Jerusalem, and the city was broken up.",cite:"Jeremías / Jeremiah 52:6 · 39:2"}
+],
+av:[
+ {d:1,short:"Aarón · Aaron",es:"Aarón murió en el monte Hor el día primero del mes quinto, y todo Israel lo lloró treinta días. Siglos después, el mismo día del calendario, Esdras llegó a Jerusalem: el primero del mes quinto.",en:"Aaron died on Mount Hor on the first day of the fifth month, and all Israel mourned him thirty days. Centuries later, on the same calendar day, Ezra arrived in Jerusalem: the first day of the fifth month.",cite:"Números / Numbers 33:38 · Esdras / Ezra 7:9"}
+],
+elul:[
+ {d:25,short:"Muro terminado · Wall finished",es:"El muro de Jerusalem se acabó el día veinticinco de Elul, en cincuenta y dos días.",en:"The wall of Jerusalem was finished on the twenty-fifth day of Elul, in fifty and two days.",cite:"Nehemías / Nehemiah 6:15"}
+],
+tishri:[
+ {d:null,short:"",es:"En el mes de Etanim se reunieron todos los varones de Israel ante el rey Salomón para la dedicación del templo, y la fiesta duró siete días: la Biblia da el mes, y el día es el de la fiesta misma.",en:"In the month Ethanim all the men of Israel assembled before King Solomon for the dedication of the temple, and the feast lasted seven days: the Bible gives the month, and the day is that of the feast itself.",cite:"1 Reyes / 1 Kings 8:2, 65"}
+],
+heshvan:[
+ {d:17,short:"El diluvio · The Flood",es:"El día diecisiete del mes segundo — segundo en el conteo civil, que empieza en Tishrei — fueron rotas las fuentes del grande abismo y abiertas las cataratas de los cielos: comenzó el diluvio.",en:"On the seventeenth day of the second month — second in the civil reckoning, which begins at Tishrei — the fountains of the great deep were broken up and the windows of heaven were opened: the Flood began.",cite:"Génesis / Genesis 7:11"},
+ {d:null,short:"",es:"En el mes de Bul, el octavo mes, se acabó el templo en todas sus partes: la Biblia da el mes, sin día.",en:"In the month Bul, the eighth month, the temple was finished in all its parts: the Bible gives the month, with no day.",cite:"1 Reyes / 1 Kings 6:38"}
+],
+kislev:[
+ {d:4,short:"Palabra a Zacarías · Word to Zechariah",es:"El día cuarto del mes noveno, Chisleu, vino palabra de Jehová a Zacarías.",en:"On the fourth day of the ninth month, Chisleu, the word of the LORD came to Zechariah.",cite:"Zacarías / Zechariah 7:1"},
+ {d:20,short:"Asamblea de Esdras · Ezra's assembly",es:"El día veinte del mes noveno todo el pueblo se reunió en Jerusalem, temblando por la lluvia, y Esdras trató el asunto de las mujeres extranjeras.",en:"On the twentieth day of the ninth month all the people gathered in Jerusalem, trembling because of the rain, and Ezra dealt with the matter of the foreign wives.",cite:"Esdras / Ezra 10:9"}
+],
+tevet:[
+ {d:5,short:"Noticia a Ezequiel · News to Ezekiel",es:"El día quinto del mes décimo llegó a Ezequiel el que había escapado de Jerusalem, con la noticia de la ciudad caída.",en:"On the fifth day of the tenth month the one who had escaped from Jerusalem came to Ezekiel with the news that the city had fallen.",cite:"Ezequiel / Ezekiel 33:21"},
+ {d:null,short:"",es:"Ester fue llevada al rey Asuero en el mes décimo, Tebeth: la Biblia da el mes, sin día.",en:"Esther was taken to King Ahasuerus in the tenth month, Tebeth: the Bible gives the month, with no day.",cite:"Ester / Esther 2:16"}
+],
+shevat:[
+ {d:1,short:"La ley explicada · The law explained",es:"El día primero del mes undécimo, Moisés habló a los hijos de Israel y comenzó a declarar esta ley: es el comienzo del Deuteronomio.",en:"On the first day of the eleventh month, Moses spoke to the children of Israel and began to declare this law: it is the opening of Deuteronomy.",cite:"Deuteronomio / Deuteronomy 1:3, 5"},
+ {d:24,short:"Visión de Zacarías · Zechariah's vision",es:"El día veinticuatro del mes undécimo, Sebat, vino palabra de Jehová al profeta Zacarías: la visión de los caballos.",en:"On the twenty-fourth day of the eleventh month, Sebat, the word of the LORD came to the prophet Zechariah: the vision of the horses.",cite:"Zacarías / Zechariah 1:7"}
+],
+adar:[
+ {d:13,short:"El día fijado · The appointed day",es:"El día trece del mes duodécimo era el día señalado en el edicto de Amán; ese día los judíos se reunieron y se defendieron de sus enemigos.",en:"The thirteenth day of the twelfth month was the day appointed in Haman's edict; on that day the Jews assembled and defended themselves against their enemies.",cite:"Ester / Esther 3:13 · 9:1"}
+],
+adar1:[],
+adar2:[
+ {d:13,short:"El día fijado · The appointed day",es:"El día trece de Adar II era el día señalado en el edicto de Amán; ese día los judíos se reunieron y se defendieron de sus enemigos.",en:"The thirteenth day of Adar II was the day appointed in Haman's edict; on that day the Jews assembled and defended themselves against their enemies.",cite:"Ester / Esther 3:13 · 9:1"}
+]
+};
+var UNDATED={
+tamuz:[{nameEs:"Ayuno del cuarto mes",nameEn:"Fast of the fourth month",cite:"Zacarías / Zechariah 8:19",es:"Zacarías lo nombra por su mes — el cuarto — y no da el día. Está puesto aquí, en el mes cuarto, sin día exacto.",en:"Zechariah names it by its month — the fourth — and gives no day. It is placed here, in the fourth month, with no exact day."}],
+av:[{nameEs:"Ayuno del quinto mes",nameEn:"Fast of the fifth month",cite:"Zacarías / Zechariah 8:19",es:"Zacarías lo nombra por su mes — el quinto — y no da el día. Está puesto aquí, en el mes quinto, sin día exacto.",en:"Zechariah names it by its month — the fifth — and gives no day. It is placed here, in the fifth month, with no exact day."}],
+tishri:[{nameEs:"Ayuno del séptimo mes",nameEn:"Fast of the seventh month",cite:"Zacarías / Zechariah 8:19",es:"Zacarías lo nombra por su mes — el séptimo — y no da el día. Está puesto aquí, en el mes séptimo, sin día exacto.",en:"Zechariah names it by its month — the seventh — and gives no day. It is placed here, in the seventh month, with no exact day."}],
+tevet:[{nameEs:"Ayuno del décimo mes",nameEn:"Fast of the tenth month",cite:"Zacarías / Zechariah 8:19",es:"Zacarías lo nombra por su mes — el décimo — y no da el día. Está puesto aquí, en el mes décimo, sin día exacto.",en:"Zechariah names it by its month — the tenth — and gives no day. It is placed here, in the tenth month, with no exact day."}],
+kislev:[{nameEs:"Fiesta de la Dedicación — en invierno",nameEn:"Feast of the Dedication — in winter",cite:"Juan / John 10:22-23",es:"«Y se celebraba en Jerusalem la fiesta de la dedicación: y era invierno; y Jesús andaba en el templo por el portal de Salomón.» Está puesta en Kislev, mes de invierno y el más cercano a esa estación, sin día exacto: la Biblia no le da fecha, y el 25 de Kislev viene de la historia posterior (1 Macabeos), fuera del canon de este calendario.",en:"“And it was at Jerusalem the feast of the dedication, and it was winter. And Jesus walked in the temple in Solomon's porch.” It is placed in Kislev, a winter month and the closest to that season, with no exact day: the Bible gives it no date, and 25 Kislev comes from later history (1 Maccabees), outside this calendar's canon."}]
+};
+var WD_ES=["DOM","LUN","MAR","MIÉ","JUE","VIE","SÁB"], WD_EN=["SUN","MON","TUE","WED","THU","FRI","SAT"];
+var MON_ES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"], MON_EN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var NOW=new Date(); var YEAR=NOW.getFullYear();
+var HFMT=null;
+try{ HFMT=new Intl.DateTimeFormat("en-u-ca-hebrew",{day:"numeric",month:"long",year:"numeric"}); HFMT.formatToParts(new Date(2026,0,1)); }catch(e){ HFMT=null; }
+function hebOf(d){ var o={}; HFMT.formatToParts(d).forEach(function(p){o[p.type]=p.value;}); return {day:parseInt(o.day,10), key:KEYMAP[o.month]||"", raw:o.month, hyear:parseInt(o.year,10)}; }
+function noon(y,m,dd){ return new Date(y,m,dd,12,0,0); }
+function addDays(d,n){ var x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+function sameDay(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+function fmtEs(d){ return d.getDate()+" "+MON_ES[d.getMonth()]; }
+function fmtEn(d){ return MON_EN[d.getMonth()]+" "+d.getDate(); }
+function fmtEsY(d){ return fmtEs(d)+" "+d.getFullYear(); }
+function fmtEnY(d){ return fmtEn(d)+", "+d.getFullYear(); }
+function rangeEs(g){ return fmtEsY(g.start)+" – "+fmtEsY(g.end); }
+function rangeEn(g){ return fmtEnY(g.start)+" – "+fmtEnY(g.end); }
+function findNisan1(year){
+  var d=noon(year,1,20);
+  for(var i=0;i<80;i++){ var h=hebOf(d); if(h.day===1&&h.key==="nisan") return d; d=addDays(d,1); }
+  return null;
+}
+function groupMonths(from,toExclusive){
+  var groups=[], cur=new Date(from.getTime()), prevKey=null, prevYear=null;
+  while(cur<toExclusive){
+    var h=hebOf(cur);
+    if(!groups.length||prevKey!==h.key||prevYear!==h.hyear){ groups.push({key:h.key,hyear:h.hyear,start:new Date(cur.getTime()),end:new Date(cur.getTime()),days:0}); }
+    var g=groups[groups.length-1]; g.end=new Date(cur.getTime()); g.days++;
+    prevKey=h.key; prevYear=h.hyear; cur=addDays(cur,1);
+  }
+  return groups;
+}
+</script>
+
+<script>
+function evMap(info){ var o={}; info.events.forEach(function(e){o[e[0]]=e[1];}); return o; }
+var LASTGROUPS=[], LASTFEASTS=[], LASTNISAN=null, LASTNEXT=null, AUTO=true;
+function fail(msg){
+  document.getElementById("months").innerHTML='<section class="card note"><p class="lang-es">'+msg+'</p></section>';
+}
+function build(){
+  if(!HFMT){ fail("Tu navegador no pudo calcular el calendario hebreo. / Your browser could not calculate the Hebrew calendar."); return; }
+  document.title="Calendario Bíblico "+YEAR+" — Biblical Calendar "+YEAR;
+  document.querySelectorAll(".yr").forEach(function(el){ el.textContent=YEAR; });
+  var nisan1=findNisan1(YEAR), nisanNext=findNisan1(YEAR+1);
+  if(!nisan1||!nisanNext){ fail("No se pudo calcular el 1 de Nisán de "+YEAR+"."); return; }
+  var groups=groupMonths(nisan1,nisanNext);
+  LASTGROUPS=groups; LASTNISAN=nisan1; LASTNEXT=nisanNext;
+  var omerStart=addDays(nisan1,15);
+  var totalDays=0; groups.forEach(function(g){ totalDays+=g.days; });
+  var isLeap=groups.length>12;
+  var lastDay=addDays(nisanNext,-1);
+  /* Hero */
+  document.getElementById("heroRange").textContent=fmtEsY(nisan1)+" – "+fmtEsY(lastDay);
+  document.getElementById("heroKind").innerHTML=isLeap
+    ? '<span class="lang-es">Año bisiesto: 13 meses · '+totalDays+' días</span><span class="lang-en">Leap year: 13 months · '+totalDays+' days</span>'
+    : '<span class="lang-es">Año común: 12 meses · '+totalDays+' días</span><span class="lang-en">Common year: 12 months · '+totalDays+' days</span>';
+  document.getElementById("exNisanEs").textContent=fmtEsY(nisan1);
+  document.getElementById("exNisanEn").textContent=fmtEnY(nisan1);
+  /* Jan 1 explainer */
+  var jan1=noon(YEAR,0,1), janHeb=hebOf(jan1);
+  var preStart=new Date(jan1.getTime());
+  while(true){ var p=addDays(preStart,-1), ph=hebOf(p); if(ph.key===janHeb.key&&ph.hyear===janHeb.hyear){ preStart=p; } else break; }
+  var pre=groupMonths(preStart,nisan1);
+  var janInfo=INFO[janHeb.key]||{es:janHeb.raw,en:janHeb.raw};
+  var seqEs=pre.map(function(g){ var inf=INFO[g.key]; return "<strong>"+inf.es+"</strong> ("+rangeEs(g)+")"; }).join(", luego ");
+  var seqEn=pre.map(function(g){ var inf=INFO[g.key]; return "<strong>"+inf.en+"</strong> ("+rangeEn(g)+")"; }).join(", then ");
+  document.getElementById("janText").innerHTML=
+    '<p class="lang-es">El 1 de enero de '+YEAR+' cae en el día <strong>'+janHeb.day+' de '+janInfo.es+'</strong>, del año bíblico anterior. Antes de que empiece el nuevo año bíblico vienen '+seqEs+', y recién el <strong>'+fmtEsY(nisan1)+' comienza Nisán</strong>, el mes 1.</p>'+
+    '<p class="lang-en">January 1, '+YEAR+' falls on <strong>day '+janHeb.day+' of '+janInfo.en+'</strong>, from the previous biblical year. Before the new biblical year begins come '+seqEn+', and only on <strong>'+fmtEnY(nisan1)+' does Nisan begin</strong>, month 1.</p>';
+  /* Leap facts */
+  var byKey={}; groups.forEach(function(g){ byKey[g.key]=g; });
+  var kindEs = totalDays===353||totalDays===383 ? "Deficiente" : (totalDays===354||totalDays===384 ? "Regular" : "Completo");
+  var kindEn = totalDays===353||totalDays===383 ? "Deficient" : (totalDays===354||totalDays===384 ? "Regular" : "Complete");
+  var purimG = byKey.adar2||byKey.adar;
+  var purimDate = purimG ? addDays(purimG.start,13) : null;
+  document.getElementById("leapFacts").innerHTML=
+    '<div class="fact"><div class="fv">'+groups.length+' <span class="lang-es">meses</span><span class="lang-en">months</span></div><div class="fl"><span class="lang-es"><strong>'+(isLeap?"Año bisiesto":"Año común")+'</strong> — '+(isLeap?"incluye el mes agregado <strong>Adar I</strong>":"sin mes agregado")+'</span><span class="lang-en"><strong>'+(isLeap?"Leap year":"Common year")+'</strong> — '+(isLeap?"includes the added month <strong>Adar I</strong>":"no added month")+'</span></div></div>'+
+    '<div class="fact"><div class="fv">'+totalDays+' <span class="lang-es">días</span><span class="lang-en">days</span></div><div class="fl"><span class="lang-es">Año <strong>'+kindEs.toLowerCase()+'</strong>: Jeshván '+byKey.heshvan.days+' días · Kislev '+byKey.kislev.days+' días</span><span class="lang-en"><strong>'+kindEn+'</strong> year: Cheshvan '+byKey.heshvan.days+' days · Kislev '+byKey.kislev.days+' days</span></div></div>'+
+    '<div class="fact"><div class="fv">Purim</div><div class="fl"><span class="lang-es">14 de <strong>'+(INFO[purimG.key].es)+'</strong> = '+fmtEsY(purimDate)+(isLeap?" (en año bisiesto, Purim va en Adar II)":"")+'</span><span class="lang-en">14 <strong>'+(INFO[purimG.key].en)+'</strong> = '+fmtEnY(purimDate)+(isLeap?" (in a leap year, Purim falls in Adar II)":"")+'</span></div></div>';
+  /* Overview + month sections */
+  var jump=document.getElementById("jumpNav"), ov=document.getElementById("overview"), host=document.getElementById("months");
+  jump.innerHTML=""; ov.innerHTML=""; host.innerHTML="";
+  var today=new Date(); today.setHours(0,0,0,0);
+  var feastRows=[];
+  groups.forEach(function(g,idx){
+    var n=idx+1, info=INFO[g.key]; if(!info) return;
+    g.n=n;
+    var a=document.createElement("a"); a.href="#mes-"+n; a.innerHTML="<b>"+n+"</b> · "+info.es+" / "+info.en; jump.appendChild(a);
+    var card=document.createElement("a"); card.className="ov"; card.href="#mes-"+n;
+    card.innerHTML='<div class="ov-head" style="background:'+info.grad+'"><div class="ov-num"><span class="lang-es">Mes</span><span class="lang-en">Month</span> '+n+' · '+g.days+' <span class="lang-es">días</span><span class="lang-en">days</span></div><div class="ov-name">'+info.es+' · '+info.en+'</div><div class="ov-hebrew">'+info.heb+' — '+info.akaEs.split("—")[0]+'</div></div><div class="ov-body"><strong>'+rangeEs(g)+'</strong><br><span style="font-size:13px">'+rangeEn(g)+'</span><div class="ov-theme"><span class="lang-es">'+info.themeEs.split(".")[0]+'.</span><span class="lang-en">'+info.themeEn.split(".")[0]+'.</span></div></div>';
+    ov.appendChild(card);
+    var ev=evMap(info), firstDow=g.start.getDay();
+    var evDay={}; (EVENTS[g.key]||[]).forEach(function(e){ if(e.d) evDay[e.d]=e.short; });
+    var cells="";
+    for(var i=0;i<firstDow;i++) cells+='<div class="cell empty"></div>';
+    for(var d=1; d<=g.days; d++){
+      var cur=addDays(g.start,d-1);
+      var isFest=!!ev[d], isSat=cur.getDay()===6, isToday=sameDay(cur,today);
+      var omN=Math.round((cur-omerStart)/864e5)+1;
+      cells+='<div class="cell'+(isFest?" fest":"")+(isSat?" sabbath":"")+(isToday?" today":"")+'"><div class="d">'+d+'</div><div class="g"><span class="lang-es">'+fmtEs(cur)+(cur.getFullYear()!==YEAR?" "+cur.getFullYear():"")+'</span><span class="lang-en">'+fmtEn(cur)+(cur.getFullYear()!==YEAR?", "+cur.getFullYear():"")+'</span><br>'+WD_ES[cur.getDay()]+' · '+WD_EN[cur.getDay()]+'</div>'+((isFest?'<div class="tag">★ '+ev[d]+'</div>':"")+(d===1?'<div class="tag nm">Luna Nueva · New Moon</div>':"")+(omN>=1&&omN<=49?'<div class="tag omer">Ómer '+omN+' · Omer '+omN+'</div>':"")+(evDay[d]?'<div class="tag evt">◆ '+evDay[d]+'</div>':""))+'</div>';
+    }
+    var rem=(firstDow+g.days)%7; if(rem) for(var j=0;j<7-rem;j++) cells+='<div class="cell empty"></div>';
+    var wdays=WD_ES.map(function(w,i){return "<div>"+w+"<br>"+WD_EN[i]+"</div>";}).join("");
+    var evList=info.events.length? '<ul class="events">'+info.events.map(function(e){var dt=addDays(g.start,e[0]-1);return "<li><strong>"+e[0]+" "+info.es+":</strong> "+e[1]+" — <span class='lang-es'>"+fmtEsY(dt)+"</span><span class='lang-en'>"+fmtEnY(dt)+"</span></li>";}).join("")+"</ul>" : '<p><span class="lang-es">Sin fiestas bíblicas señaladas en este mes.</span><span class="lang-en">No biblical feasts appointed in this month.</span></p>';
+    var evItems=(EVENTS[g.key]||[]).map(function(e){ var dt=e.d?addDays(g.start,e.d-1):null; return "<li><strong>"+(e.d? e.d+" "+info.es+" · " : "<span class='lang-es'>En este mes · </span><span class='lang-en'>In this month · </span>")+"</strong><span class='lang-es'>"+e.es+"</span><span class='lang-en'>"+e.en+"</span>"+(dt? " — <span class='lang-es'>"+fmtEsY(dt)+"</span><span class='lang-en'>"+fmtEnY(dt)+"</span>":"")+" <em>("+e.cite+")</em></li>"; }).join("");
+    var undItems=(UNDATED[g.key]||[]).map(function(u){ return "<li><strong>"+u.nameEs+" · "+u.nameEn+"</strong> — <span class='lang-es'>"+u.es+"</span><span class='lang-en'>"+u.en+"</span> <em>("+u.cite+")</em></li>"; }).join("");
+    var extraInfo='<h4><span class="lang-es">Luna Nueva de este mes</span><span class="lang-en">This month’s New Moon</span></h4><p><strong>1 '+info.es+' · 1 '+info.en+'</strong> = <span class="lang-es">'+fmtEsY(g.start)+'</span><span class="lang-en">'+fmtEnY(g.start)+'</span> · <span class="lang-es">Ofrendas de Números 28:11-15 (ver «La Luna Nueva en detalle»)</span><span class="lang-en">Offerings of Numbers 28:11-15 (see “The New Moon in detail”)</span></p>'
+      +(evItems? '<h4><span class="lang-es">Eventos fechados en la Biblia</span><span class="lang-en">Events dated in the Bible</span></h4><ul class="events">'+evItems+'</ul>' : "")
+      +(undItems? '<div class="undated"><h4><span class="lang-es">Mencionado para este mes — sin día exacto</span><span class="lang-en">Mentioned for this month — no exact day</span></h4><ul class="events">'+undItems+'</ul><p><span class="lang-es">La Biblia no da el día: se presenta dentro de su mes, sin fecha inventada.</span><span class="lang-en">The Bible gives no day: it is shown within its month, with no invented date.</span></p></div>' : "");
+    var sec=document.createElement("section"); sec.className="month"; sec.id="mes-"+n;
+    sec.innerHTML=
+    '<div class="m-head" style="background:'+info.grad+'"><div class="m-top"><div class="m-number">'+n+'<small><span class="lang-es">MES</span><span class="lang-en">MONTH</span></small></div><div class="m-title"><h3>'+info.es+' · '+info.en+' · '+info.heb+'</h3><div class="aka"><span class="lang-es">'+info.akaEs+'</span><span class="lang-en">'+info.akaEn+'</span></div><div class="m-dates"><span>📅 <span class="lang-es">'+rangeEs(g)+'</span><span class="lang-en">'+rangeEn(g)+'</span></span><span>'+g.days+' días · days</span></div></div></div></div>'+
+    '<div class="m-body"><div class="m-info"><h4><span class="lang-es">Qué representa</span><span class="lang-en">What it represents</span></h4><p class="lang-es">'+info.themeEs+'</p><p class="lang-en">'+info.themeEn+'</p><h4><span class="lang-es">Versículo clave</span><span class="lang-en">Key verse</span></h4><p class="verse"><span class="lang-es">“'+info.verseEs+'”</span><span class="lang-en">“'+info.verseEn+'”</span><cite>'+info.cite+'</cite></p><h4><span class="lang-es">Fiestas bíblicas</span><span class="lang-en">Biblical feasts</span></h4>'+evList+extraInfo+'</div>'+
+    '<div class="cal"><div class="cal-title"><span><span class="lang-es">Calendario día por día</span><span class="lang-en">Day-by-day calendar</span></span><span>'+info.es+' '+n+' · '+g.days+' <span class="lang-es">días</span><span class="lang-en">days</span></span></div><div class="weekdays">'+wdays+'</div><div class="grid">'+cells+'</div><div class="legend"><span><i style="background:var(--fest)"></i><span class="lang-es">Fiesta bíblica</span><span class="lang-en">Biblical feast</span></span><span><i style="background:var(--gold-bg)"></i><span class="lang-es">Sábado (Shabbat)</span><span class="lang-en">Saturday (Shabbat)</span></span><span><i style="background:var(--gold)"></i><span class="lang-es">Evento fechado en la Biblia</span><span class="lang-en">Event dated in the Bible</span></span><span><i style="background:var(--accent2)"></i><span class="lang-es">Día del Ómer</span><span class="lang-en">Omer day</span></span><span><span class="lang-es">Número grande = día bíblico · fecha pequeña = calendario de hoy</span><span class="lang-en">Large number = biblical day · small date = today’s calendar</span></span></div></div></div>';
+    host.appendChild(sec);
+  });
+  /* Feasts summary (chronological by Gregorian date) */
+  var FEASTDEF=[
+    {key:"adar",alt:"adar2",days:[14],nameEs:"Purim",nameEn:"Purim",citeEs:"Ester 9:21",citeEn:"Esther 9:21"},
+    {key:"adar",alt:"adar2",days:[15],nameEs:"Purim en Susán",nameEn:"Shushan Purim",citeEs:"Ester 9:18",citeEn:"Esther 9:18"},
+    {key:"nisan",days:[14],nameEs:"Pascua",nameEn:"Passover",citeEs:"Levítico 23:5",citeEn:"Leviticus 23:5"},
+    {key:"nisan",days:[16],nameEs:"Primicias — la gavilla mecida (de aquí se cuentan los 50 días hasta Shavuot)",nameEn:"Firstfruits — the sheaf waved (the 50 days to Shavuot are counted from here)",citeEs:"Levítico 23:10-11, 15-16",citeEn:"Leviticus 23:10-11, 15-16"},
+    {key:"nisan",days:[15,21],range:true,nameEs:"Panes sin Levadura (Ázimos)",nameEn:"Unleavened Bread",citeEs:"Levítico 23:6",citeEn:"Leviticus 23:6"},
+    {key:"iyar",days:[14],nameEs:"Segunda Pascua",nameEn:"Second Passover",citeEs:"Números 9:11",citeEn:"Numbers 9:11"},
+    {key:"sivan",days:[6],nameEs:"Shavuot / Fiesta de las Semanas",nameEn:"Shavuot / Feast of Weeks",citeEs:"Levítico 23:16",citeEn:"Leviticus 23:16"},
+    {key:"tishri",days:[1],nameEs:"Fiesta de las Trompetas",nameEn:"Feast of Trumpets",citeEs:"Levítico 23:24",citeEn:"Leviticus 23:24"},
+    {key:"tishri",days:[10],nameEs:"Yom Kippur / Día de la Expiación",nameEn:"Yom Kippur / Day of Atonement",citeEs:"Levítico 23:27",citeEn:"Leviticus 23:27"},
+    {key:"tishri",days:[15,21],range:true,nameEs:"Sucot / Tabernáculos",nameEn:"Sukkot / Tabernacles",citeEs:"Levítico 23:34",citeEn:"Leviticus 23:34"},
+    {key:"tishri",days:[22],nameEs:"Sheminí Atzeret / El Octavo Día",nameEn:"Shemini Atzeret / The Eighth Day",citeEs:"Levítico 23:36",citeEn:"Leviticus 23:36"}
+  ];
+  var rows=[], feastSimple=[];
+  FEASTDEF.forEach(function(f){
+    var g=byKey[f.key]; if(f.alt&&byKey[f.alt]&&f.key==="adar") g=byKey[f.alt];
+    if(!g) return;
+    var d1=addDays(g.start,f.days[0]-1);
+    var labelEs,labelEn;
+    if(f.range){ var d2=addDays(g.start,f.days[1]-1); labelEs=fmtEs(d1)+" – "+fmtEsY(d2); labelEn=fmtEn(d1)+" – "+fmtEnY(d2); }
+    else { labelEs=fmtEsY(d1); labelEn=fmtEnY(d1); }
+    rows.push({date:d1,html:'<li><strong><span class="lang-es">'+f.nameEs+'</span><span class="lang-en">'+f.nameEn+'</span></strong> — '+f.days[0]+(f.range?"–"+f.days[1]:"")+" "+(INFO[g.key].es)+' · <span class="lang-es">'+labelEs+'</span><span class="lang-en">'+labelEn+'</span> ('+f.citeEs+' / '+f.citeEn+')</li>'});
+    feastSimple.push({date:d1,nameEs:f.nameEs,nameEn:f.nameEn,bib:f.days[0]+(f.range?"–"+f.days[1]:"")+" "+INFO[g.key].es,cite:f.citeEs+" / "+f.citeEn});
+  });
+  rows.sort(function(a,b){ return a.date-b.date; });
+  /* Undated items: placed in their month, with no exact day */
+  var urows=[];
+  groups.forEach(function(g){ (UNDATED[g.key]||[]).forEach(function(u){ urows.push({date:g.start,simple:{date:null,nameEs:u.nameEs,nameEn:u.nameEn,bib:INFO[g.key].es+" ("+rangeEs(g)+")",cite:u.cite},html:'<li><strong><span class="lang-es">'+u.nameEs+'</span><span class="lang-en">'+u.nameEn+'</span></strong> — <span class="lang-es">en '+INFO[g.key].es+', '+rangeEs(g)+' — <strong>sin día exacto</strong>: la Biblia no lo da</span><span class="lang-en">in '+INFO[g.key].en+', '+rangeEn(g)+' — <strong>no exact day</strong>: the Bible does not give one</span> ('+u.cite+')</li>'}); }); });
+  urows.sort(function(a,b){ return a.date-b.date; });
+  document.getElementById("feastList").innerHTML=rows.map(function(r){return r.html;}).join("")+urows.map(function(r){return r.html;}).join("");
+  LASTFEASTS=feastSimple.concat(urows.map(function(r){return r.simple;}));
+  /* Dated events list, chronological */
+  var evRows=[];
+  groups.forEach(function(g){ (EVENTS[g.key]||[]).forEach(function(e){ var dt=e.d?addDays(g.start,e.d-1):g.start; evRows.push({date:dt,html:'<li><strong>'+(e.d? e.d+" "+INFO[g.key].es+" · <span class='lang-es'>"+fmtEsY(dt)+"</span><span class='lang-en'>"+fmtEnY(dt)+"</span>" : "<span class='lang-es'>En "+INFO[g.key].es+" (sin día dado)</span><span class='lang-en'>In "+INFO[g.key].en+" (no day given)</span>")+'</strong> — <span class="lang-es">'+e.es+'</span><span class="lang-en">'+e.en+'</span> <em>('+e.cite+')</em></li>'}); }); });
+  evRows.sort(function(a,b){ return a.date-b.date; });
+  document.getElementById("eventList").innerHTML=evRows.map(function(r){return r.html;}).join("");
+  /* Omer weeks */
+  var ow="";
+  for(var w=0;w<7;w++){ var ws=addDays(omerStart,w*7), we=addDays(omerStart,w*7+6); ow+='<span class="omerweek"><strong><span class="lang-es">Semana</span><span class="lang-en">Week</span> '+(w+1)+'</strong> · Ómer '+(w*7+1)+'–'+(w*7+7)+'<br><span class="lang-es">'+fmtEsY(ws)+' – '+fmtEsY(we)+'</span><span class="lang-en">'+fmtEnY(ws)+' – '+fmtEnY(we)+'</span></span>'; }
+  var shav=addDays(omerStart,49), shavG=byKey.sivan;
+  ow+='<p style="margin-top:12px"><strong><span class="lang-es">Día 50 — Shavuot:</span><span class="lang-en">Day 50 — Shavuot:</span></strong> 6 '+INFO.sivan.es+' · <span class="lang-es">'+fmtEsY(shav)+'</span><span class="lang-en">'+fmtEnY(shav)+'</span></p>';
+  document.getElementById("omerWeeks").innerHTML=ow;
+  /* Next feast banner */
+  var t0=new Date(); t0.setHours(0,0,0,0);
+  var sortedF=feastSimple.slice().sort(function(a,b){return a.date-b.date;});
+  var nf=null; for(var i=0;i<sortedF.length;i++){ if(sortedF[i].date>=t0){ nf=sortedF[i]; break; } }
+  var nfEl=document.getElementById("nextFeast");
+  if(nf){ var diff=Math.round((nf.date-t0)/864e5); nfEl.innerHTML='<div class="nextbig"><span class="lang-es">'+nf.nameEs+'</span><span class="lang-en">'+nf.nameEn+'</span></div><p><strong>'+nf.bib+'</strong> · <span class="lang-es">'+fmtEsY(nf.date)+'</span><span class="lang-en">'+fmtEnY(nf.date)+'</span>'+(diff===0?' · <strong><span class="lang-es">¡Es hoy!</span><span class="lang-en">It is today!</span></strong>':' · <span class="lang-es">faltan <strong>'+diff+'</strong> días</span><span class="lang-en">in <strong>'+diff+'</strong> days</span>')+'<br><span style="font-size:13px">'+nf.cite+' · <span class="lang-es">comienza al atardecer del día anterior</span><span class="lang-en">begins at sunset the evening before</span></span></p>'; }
+  else { nfEl.innerHTML='<p><span class="lang-es">El ciclo de fiestas de este año bíblico ya pasó. El año siguiente empieza el <strong>1 de Nisán = '+fmtEsY(nisanNext)+'</strong>.</span><span class="lang-en">This biblical year’s feast cycle has passed. The next year begins on <strong>1 Nisan = '+fmtEnY(nisanNext)+'</strong>.</span></p>'; }
+  /* Converter: populate months of the displayed year */
+  var cm=document.getElementById("convMonth"); cm.innerHTML="";
+  groups.forEach(function(g,idx){ var o=document.createElement("option"); o.value=idx; o.textContent=(idx+1)+" · "+INFO[g.key].es+" / "+INFO[g.key].en+" ("+g.days+" días/days)"; cm.appendChild(o); });
+  document.getElementById("convDay").max=groups[0].days;
+}
+function biblicalOf(d){
+  d=new Date(d.getFullYear(),d.getMonth(),d.getDate(),12,0,0);
+  var cands=[];
+  [d.getFullYear()-1,d.getFullYear(),d.getFullYear()+1].forEach(function(y){ var n=findNisan1(y); if(n) cands.push(n); });
+  cands.sort(function(a,b){return a-b;});
+  var start=null,next=null;
+  for(var i=0;i<cands.length;i++){ if(cands[i]<=d){ start=cands[i]; next=cands[i+1]||findNisan1(cands[i].getFullYear()+1); } }
+  if(!start||!next) return null;
+  var gs=groupMonths(start,next), cur=new Date(start.getTime());
+  for(var gi=0;gi<gs.length;gi++){ for(var dd=1;dd<=gs[gi].days;dd++){ if(sameDay(cur,d)) return {g:gs[gi],n:gi+1,day:dd,date:new Date(cur.getTime()),omerStart:addDays(start,15)}; cur=addDays(cur,1); } }
+  return null;
+}
+function describeBiblical(r){
+  var info=INFO[r.g.key], dt=r.date;
+  var ev=evMap(info)[r.day];
+  var omN=Math.round((dt-r.omerStart)/864e5)+1;
+  var bits=[];
+  if(ev) bits.push("★ "+ev);
+  if(r.day===1) bits.push("Luna Nueva · New Moon");
+  if(omN>=1&&omN<=49) bits.push("Ómer "+omN+" · Omer "+omN);
+  (EVENTS[r.g.key]||[]).forEach(function(e){ if(e.d===r.day) bits.push("◆ "+e.short); });
+  if(dt.getDay()===6) bits.push("Sábado · Sabbath");
+  return '<strong>'+r.day+' de '+info.es+' · '+r.day+' '+info.en+'</strong> <span style="color:var(--muted)">(<span class="lang-es">mes</span><span class="lang-en">month</span> '+r.n+' · '+WD_ES[dt.getDay()]+' / '+WD_EN[dt.getDay()]+')</span>'+(bits.length? '<br>'+bits.join(" · ") : "");
+}
+function doConvG(){
+  var v=document.getElementById("convG").value, out=document.getElementById("convGResult");
+  if(!v){ out.textContent=""; return; }
+  var p=v.split("-"), d=noon(parseInt(p[0],10),parseInt(p[1],10)-1,parseInt(p[2],10));
+  var r=biblicalOf(d);
+  out.innerHTML= r? '<span class="lang-es">'+fmtEsY(d)+'</span><span class="lang-en">'+fmtEnY(d)+'</span> = '+describeBiblical(r) : '<span class="lang-es">No se pudo calcular esa fecha.</span><span class="lang-en">That date could not be calculated.</span>';
+}
+function doConvB(){
+  var idx=parseInt(document.getElementById("convMonth").value,10), day=parseInt(document.getElementById("convDay").value,10), out=document.getElementById("convBResult");
+  var g=LASTGROUPS[idx]; if(!g) return;
+  if(isNaN(day)||day<1) day=1; if(day>g.days) day=g.days;
+  var dt=addDays(g.start,day-1), info=INFO[g.key];
+  var omN=Math.round((dt-addDays(LASTNISAN,15))/864e5)+1;
+  var ev=evMap(info)[day];
+  out.innerHTML='<strong>'+day+' '+info.es+' · '+day+' '+info.en+'</strong> = <span class="lang-es">'+fmtEsY(dt)+'</span><span class="lang-en">'+fmtEnY(dt)+'</span> ('+WD_ES[dt.getDay()]+' / '+WD_EN[dt.getDay()]+')'+(ev? '<br>★ '+ev : "")+(day===1? '<br>Luna Nueva · New Moon' : "")+(omN>=1&&omN<=49? '<br>Ómer '+omN+' · Omer '+omN : "");
+}
+function downloadPDF(){
+  var msg=document.getElementById("pdfMsg");
+  if(!LASTGROUPS.length){ msg.textContent="…"; return; }
+  if(!(window.jspdf&&window.jspdf.jsPDF)){ fallbackPDF(msg); return; }
+  try{
+    var doc=new window.jspdf.jsPDF({unit:"pt",format:"a4"});
+    var W=595,H=842,M=40;
+    doc.setFont("helvetica","bold"); doc.setFontSize(24);
+    doc.text("Calendario Biblico "+YEAR, M, 90);
+    doc.setFontSize(15); doc.text("Biblical Calendar "+YEAR, M, 118);
+    doc.setFont("helvetica","normal"); doc.setFontSize(12);
+    var last=LASTGROUPS[LASTGROUPS.length-1].end;
+    doc.text("1 de Nisan / 1 Nisan: "+fmtEnY(LASTNISAN), M, 160);
+    doc.text("Fin / End: "+fmtEnY(last), M, 180);
+    doc.text(LASTGROUPS.length+" meses / months · "+LASTGROUPS.reduce(function(s,g){return s+g.days;},0)+" dias / days", M, 200);
+    doc.text("Los meses biblicos son lunares, de 29 o 30 dias. Cada dia biblico", M, 240);
+    doc.text("comienza al atardecer anterior. Textos: Reina-Valera 1909 / KJV.", M, 258);
+    doc.text("Lo que la Biblia menciona sin dar dia (ayunos de Zacarias 8:19,", M, 300);
+    doc.text("Dedicacion en invierno) va en su mes, sin dia exacto. El ano", M, 318);
+    doc.text("sabatico y el Jubileo van a nivel de ano, sin dia.", M, 336);
+    LASTGROUPS.forEach(function(g,idx){
+      doc.addPage();
+      var info=INFO[g.key];
+      doc.setFont("helvetica","bold"); doc.setFontSize(18);
+      doc.text("Mes "+(idx+1)+" · "+info.es+" / "+info.en, M, 60);
+      doc.setFont("helvetica","normal"); doc.setFontSize(11);
+      doc.text(rangeEn(g)+" · "+g.days+" dias / days", M, 80);
+      var x0=M,y0=104,cw=(W-2*M)/7,ch=56;
+      doc.setFontSize(9); doc.setFont("helvetica","bold");
+      ["SUN","MON","TUE","WED","THU","FRI","SAT"].forEach(function(w,i){ doc.text(w,x0+i*cw+4,y0-6); });
+      var ev=evMap(info), evDay={}; (EVENTS[g.key]||[]).forEach(function(e){ if(e.d) evDay[e.d]=e.short; });
+      var omerStart=addDays(LASTNISAN,15), firstDow=g.start.getDay();
+      for(var d=1;d<=g.days;d++){
+        var pos=firstDow+d-1, col=pos%7, row=Math.floor(pos/7), x=x0+col*cw, y=y0+row*ch, cur=addDays(g.start,d-1);
+        doc.setDrawColor(190); doc.rect(x,y,cw,ch);
+        doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.text(String(d),x+5,y+17);
+        doc.setFont("helvetica","normal"); doc.setFontSize(7.5);
+        doc.text(fmtEn(cur)+(cur.getFullYear()!==YEAR?", "+cur.getFullYear():""),x+5,y+29);
+        var tags=[];
+        if(ev[d]) tags.push(ev[d]);
+        if(d===1) tags.push("New Moon");
+        var omN=Math.round((cur-omerStart)/864e5)+1; if(omN>=1&&omN<=49) tags.push("Omer "+omN);
+        if(evDay[d]) tags.push(evDay[d].split("·")[0].trim());
+        if(tags.length){ doc.setFontSize(6); var lines=doc.splitTextToSize(tags.join(" · "),cw-8); doc.text(lines.slice(0,3),x+5,y+40); }
+      }
+      var ly=y0+Math.ceil((firstDow+g.days)/7)*ch+26;
+      doc.setFontSize(9.5);
+      (UNDATED[g.key]||[]).forEach(function(u){ var t=doc.splitTextToSize("Sin dia exacto / No exact day: "+u.nameEs+" / "+u.nameEn+" — en este mes / in this month ("+u.cite+").",W-2*M); doc.text(t,M,ly); ly+=t.length*12+4; });
+    });
+    doc.addPage();
+    doc.setFont("helvetica","bold"); doc.setFontSize(16); doc.text("Fiestas biblicas / Biblical feasts "+YEAR, M, 60);
+    doc.setFont("helvetica","normal"); doc.setFontSize(10.5);
+    var ly2=88;
+    LASTFEASTS.forEach(function(f){ if(ly2>H-50){ doc.addPage(); ly2=60; } var fl=doc.splitTextToSize("• "+f.nameEs+" / "+f.nameEn+" — "+f.bib+(f.date? " · "+fmtEnY(f.date) : " · sin dia exacto / no exact day")+" ("+f.cite+")", W-2*M); doc.text(fl, M, ly2); ly2+=fl.length*13+3; });
+    ly2+=10;
+    doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.text("Eventos fechados / Dated events", M, ly2); ly2+=20; doc.setFont("helvetica","normal"); doc.setFontSize(10);
+    LASTGROUPS.forEach(function(g){ (EVENTS[g.key]||[]).forEach(function(e){ if(ly2>H-50){ doc.addPage(); ly2=60; } var dt=e.d? addDays(g.start,e.d-1):null; var el=doc.splitTextToSize("• "+(e.d? e.d+" "+INFO[g.key].es+" · "+fmtEnY(dt) : INFO[g.key].es+" (sin dia / no day)")+" — "+e.short+" ("+e.cite+")", W-2*M); doc.text(el, M, ly2); ly2+=el.length*12+3; }); });
+    doc.save("calendario-biblico-"+YEAR+".pdf");
+    msg.innerHTML='<span class="lang-es">PDF de '+YEAR+' descargado.</span><span class="lang-en">PDF for '+YEAR+' downloaded.</span>';
+  }catch(e){ fallbackPDF(msg); }
+}
+function fallbackPDF(msg){
+  var h='<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Calendario Biblico '+YEAR+'</title><style>body{font-family:Georgia,serif;margin:32px}table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:5px 8px;text-align:left}</style></head><body><h1>Calendario Biblico '+YEAR+' · Biblical Calendar '+YEAR+'</h1>';
+  LASTGROUPS.forEach(function(g,idx){ h+='<h2>Mes '+(idx+1)+' · '+INFO[g.key].es+' / '+INFO[g.key].en+' — '+rangeEn(g)+' · '+g.days+' dias/days</h2>'; });
+  h+='<h2>Fiestas / Feasts</h2><ul>'+LASTFEASTS.map(function(f){return '<li>'+f.nameEs+' / '+f.nameEn+' — '+f.bib+(f.date? ' · '+fmtEnY(f.date):' · sin dia exacto / no exact day')+'</li>';}).join("")+'</ul></body></html>';
+  var b=new Blob([h],{type:"text/html"}), a=document.createElement("a");
+  a.href=URL.createObjectURL(b); a.download="calendario-biblico-"+YEAR+".html"; document.body.appendChild(a); a.click(); a.remove();
+  msg.innerHTML='<span class="lang-es">No se pudo generar el PDF en este navegador; se descargó en su lugar una versión imprimible (HTML) del año '+YEAR+'.</span><span class="lang-en">The PDF could not be generated in this browser; a printable (HTML) version of '+YEAR+' was downloaded instead.</span>';
+}
+build();
+document.getElementById("yearInput").value=YEAR;
+document.getElementById("autoToggle").addEventListener("change",function(){ AUTO=this.checked; if(AUTO){ YEAR=new Date().getFullYear(); document.getElementById("yearInput").value=YEAR; } document.getElementById("yearInput").disabled=AUTO; build(); });
+document.getElementById("yearInput").disabled=true;
+function goYear(v){ if(isNaN(v)||v<1800||v>2600) return; AUTO=false; document.getElementById("autoToggle").checked=false; document.getElementById("yearInput").disabled=false; YEAR=v; document.getElementById("yearInput").value=v; build(); }
+document.getElementById("yearGo").addEventListener("click",function(){ goYear(parseInt(document.getElementById("yearInput").value,10)); });
+document.getElementById("yearPrev").addEventListener("click",function(){ goYear((parseInt(document.getElementById("yearInput").value,10)||YEAR)-1); });
+document.getElementById("yearNext").addEventListener("click",function(){ goYear((parseInt(document.getElementById("yearInput").value,10)||YEAR)+1); });
+document.getElementById("pdfBtn").addEventListener("click",downloadPDF);
+document.getElementById("convGGo").addEventListener("click",doConvG);
+document.getElementById("convG").addEventListener("change",doConvG);
+document.getElementById("convBGo").addEventListener("click",doConvB);
+document.getElementById("convMonth").addEventListener("change",function(){ var g=LASTGROUPS[parseInt(this.value,10)]; if(g) document.getElementById("convDay").max=g.days; });
+setInterval(function(){ if(AUTO){ var y=new Date().getFullYear(); if(y!==YEAR){ YEAR=y; document.getElementById("yearInput").value=y; build(); } } },3600000);
+/* ===== Strict view: Bible only — months by number, feasts by biblical day, no Gregorian dates, no Adar II ===== */
+var STRICT_ORDER=["nisan","iyar","sivan","tamuz","av","elul","tishri","heshvan","kislev","tevet","shevat","adar"];
+var STRICT_NAME={
+nisan:{es:"Abib",en:"Abib",noteEs:"La Biblia también lo llama Nisán después del cautiverio (Nehemías 2:1; Ester 3:7).",noteEn:"The Bible also calls it Nisan after the captivity (Nehemiah 2:1; Esther 3:7)."},
+iyar:{es:"Ziv",en:"Ziv",noteEs:"Nombre que la Biblia da a este mes (1 Reyes 6:1).",noteEn:"Name the Bible gives this month (1 Kings 6:1)."},
+sivan:{es:"Siván",en:"Sivan",noteEs:"Nombre que la Biblia da a este mes (Ester 8:9).",noteEn:"Name the Bible gives this month (Esther 8:9)."},
+tamuz:{es:"",en:"",noteEs:"La Biblia no le da nombre: lo llama «el mes cuarto» (Jeremías 52:6). El nombre posterior no se usa en esta vista.",noteEn:"The Bible gives it no name: it calls it “the fourth month” (Jeremiah 52:6). The later name is not used in this view."},
+av:{es:"",en:"",noteEs:"La Biblia no le da nombre: lo llama «el mes quinto» (Esdras 7:8-9). El nombre posterior no se usa en esta vista.",noteEn:"The Bible gives it no name: it calls it “the fifth month” (Ezra 7:8-9). The later name is not used in this view."},
+elul:{es:"Elul",en:"Elul",noteEs:"Nombre que la Biblia da a este mes (Nehemías 6:15).",noteEn:"Name the Bible gives this month (Nehemiah 6:15)."},
+tishri:{es:"Etanim",en:"Ethanim",noteEs:"Nombre que la Biblia da a este mes (1 Reyes 8:2).",noteEn:"Name the Bible gives this month (1 Kings 8:2)."},
+heshvan:{es:"Bul",en:"Bul",noteEs:"Nombre que la Biblia da a este mes (1 Reyes 6:38).",noteEn:"Name the Bible gives this month (1 Kings 6:38)."},
+kislev:{es:"Chisleu",en:"Chisleu",noteEs:"Nombre que la Biblia da a este mes (Nehemías 1:1; Zacarías 7:1).",noteEn:"Name the Bible gives this month (Nehemiah 1:1; Zechariah 7:1)."},
+tevet:{es:"Tebeth",en:"Tebeth",noteEs:"Nombre que la Biblia da a este mes (Ester 2:16).",noteEn:"Name the Bible gives this month (Esther 2:16)."},
+shevat:{es:"Sebat",en:"Sebat",noteEs:"Nombre que la Biblia da a este mes (Zacarías 1:7).",noteEn:"Name the Bible gives this month (Zechariah 1:7)."},
+adar:{es:"Adar",en:"Adar",noteEs:"Nombre que la Biblia da a este mes (Ester 3:7). Es el mes duodécimo y último: no hay un mes trece en esta vista.",noteEn:"Name the Bible gives this month (Esther 3:7). It is the twelfth and last month: there is no thirteenth month in this view."}
+};
+function buildStrict(){
+  var host=document.getElementById("strictView"); if(!host) return;
+  host.innerHTML="";
+  STRICT_ORDER.forEach(function(key,idx){
+    var n=idx+1, info=INFO[key], sn=STRICT_NAME[key]; if(!info) return;
+    var titleEs=sn.es? ("Mes "+n+" — "+sn.es) : ("Mes "+n);
+    var titleEn=sn.en? ("Month "+n+" — "+sn.en) : ("Month "+n);
+    var marked={};
+    marked[1]={nm:true};
+    info.events.forEach(function(e){ (marked[e[0]]=marked[e[0]]||{}).fest=e[1]; });
+    (EVENTS[key]||[]).forEach(function(e){ if(e.d){ (marked[e.d]=marked[e.d]||{}).evt=e; } });
+    var days=Object.keys(marked).map(Number).sort(function(a,b){return a-b;});
+    var dayItems=days.map(function(d){
+      var m=marked[d], parts=[];
+      if(m.nm) parts.push('<span class="lang-es">Luna Nueva — principio del mes (Números 28:11)</span><span class="lang-en">New Moon — beginning of the month (Numbers 28:11)</span>');
+      if(m.fest) parts.push("★ "+m.fest);
+      if(m.evt) parts.push("◆ <span class='lang-es'>"+m.evt.es+"</span><span class='lang-en'>"+m.evt.en+"</span> <em>("+m.evt.cite+")</em>");
+      return "<li><strong><span class='lang-es'>Día "+d+"</span><span class='lang-en'>Day "+d+"</span></strong> — "+parts.join(" · ")+"</li>";
+    }).join("");
+    var monthOnly=(EVENTS[key]||[]).filter(function(e){return !e.d;}).map(function(e){ return "<li><strong><span class='lang-es'>En este mes</span><span class='lang-en'>In this month</span></strong> — <span class='lang-es'>"+e.es+"</span><span class='lang-en'>"+e.en+"</span> <em>("+e.cite+")</em></li>"; }).join("");
+    var undItems=(UNDATED[key]||[]).map(function(u){ return "<li><strong>"+u.nameEs+" · "+u.nameEn+"</strong> — <span class='lang-es'>"+u.es+"</span><span class='lang-en'>"+u.en+"</span> <em>("+u.cite+")</em></li>"; }).join("");
+    var omerNote="";
+    if(key==="nisan") omerNote='<p><span class="lang-es"><strong>Ómer:</strong> la cuenta empieza el día 16, con las Primicias (Levítico 23:15).</span><span class="lang-en"><strong>Omer:</strong> the count begins on day 16, with Firstfruits (Leviticus 23:15).</span></p>';
+    if(key==="iyar") omerNote='<p><span class="lang-es"><strong>Ómer:</strong> la cuenta de los 49 días sigue durante todo este mes, entre Primicias y Shavuot (Levítico 23:15-16).</span><span class="lang-en"><strong>Omer:</strong> the count of the 49 days continues through this whole month, between Firstfruits and Shavuot (Leviticus 23:15-16).</span></p>';
+    if(key==="sivan") omerNote='<p><span class="lang-es"><strong>Ómer:</strong> la cuenta termina el día 5 (Ómer 49); el día 6 es el día 50, Shavuot (Levítico 23:16).</span><span class="lang-en"><strong>Omer:</strong> the count ends on day 5 (Omer 49); day 6 is day 50, Shavuot (Leviticus 23:16).</span></p>';
+    var sec=document.createElement("section"); sec.className="month";
+    sec.innerHTML=
+    '<div class="m-head" style="background:'+info.grad+'"><div class="m-top"><div class="m-number">'+n+'<small><span class="lang-es">MES</span><span class="lang-en">MONTH</span></small></div><div class="m-title"><h3><span class="lang-es">'+titleEs+'</span><span class="lang-en">'+titleEn+'</span></h3><div class="aka"><span class="lang-es">'+sn.noteEs+'</span><span class="lang-en">'+sn.noteEn+'</span></div></div></div></div>'+
+    '<div class="s-body"><h4 class="subh"><span class="lang-es">Qué representa</span><span class="lang-en">What it represents</span></h4><p class="lang-es" style="color:var(--muted)">'+info.themeEs+'</p><p class="lang-en" style="color:var(--muted)">'+info.themeEn+'</p>'+
+    '<p class="verse"><span class="lang-es">“'+info.verseEs+'”</span><span class="lang-en">“'+info.verseEn+'”</span><cite>'+info.cite+'</cite></p>'+
+    omerNote+
+    '<h4 class="subh"><span class="lang-es">Días señalados — solo por día bíblico</span><span class="lang-en">Appointed days — by biblical day only</span></h4>'+
+    (dayItems||monthOnly? '<ul class="s-days">'+dayItems+monthOnly+'</ul>' : '<p style="color:var(--muted)"><span class="lang-es">La Biblia no señala fiestas ni eventos con día en este mes.</span><span class="lang-en">The Bible appoints no feasts or dated events in this month.</span></p>')+
+    (undItems? '<div class="undated"><h4><span class="lang-es">Mencionado para este mes — sin día exacto</span><span class="lang-en">Mentioned for this month — no exact day</span></h4><ul class="events">'+undItems+'</ul></div>' : "")+
+    '</div>';
+    host.appendChild(sec);
+  });
+  var sum=document.createElement("section"); sum.className="card note";
+  sum.innerHTML='<h3><span class="lang-es">Las fiestas, solo por día bíblico</span><span class="lang-en">The feasts, by biblical day only</span></h3><ul class="events">'+
+  '<li><strong><span class="lang-es">Sábado</span><span class="lang-en">Sabbath</span></strong> — <span class="lang-es">cada séptimo día · Levítico 23:3</span><span class="lang-en">every seventh day · Leviticus 23:3</span></li>'+
+  '<li><strong><span class="lang-es">Luna Nueva</span><span class="lang-en">New Moon</span></strong> — <span class="lang-es">día 1 de cada mes · Números 28:11</span><span class="lang-en">day 1 of every month · Numbers 28:11</span></li>'+
+  '<li><strong>Pascua · Passover</strong> — <span class="lang-es">día 14 del mes primero · Levítico 23:5</span><span class="lang-en">day 14 of the first month · Leviticus 23:5</span></li>'+
+  '<li><strong><span class="lang-es">Panes sin Levadura</span><span class="lang-en">Unleavened Bread</span></strong> — <span class="lang-es">días 15 al 21 del mes primero · Levítico 23:6</span><span class="lang-en">days 15 to 21 of the first month · Leviticus 23:6</span></li>'+
+  '<li><strong><span class="lang-es">Primicias</span><span class="lang-en">Firstfruits</span></strong> — <span class="lang-es">la gavilla mecida, «el día siguiente del sábado» · Levítico 23:10-11</span><span class="lang-en">the sheaf waved, “on the morrow after the sabbath” · Leviticus 23:10-11</span></li>'+
+  '<li><strong><span class="lang-es">Segunda Pascua</span><span class="lang-en">Second Passover</span></strong> — <span class="lang-es">día 14 del mes segundo · Números 9:11</span><span class="lang-en">day 14 of the second month · Numbers 9:11</span></li>'+
+  '<li><strong>Shavuot</strong> — <span class="lang-es">el día 50, contado desde las Primicias · Levítico 23:16</span><span class="lang-en">day 50, counted from Firstfruits · Leviticus 23:16</span></li>'+
+  '<li><strong><span class="lang-es">Fiesta de las Trompetas</span><span class="lang-en">Feast of Trumpets</span></strong> — <span class="lang-es">día 1 del mes séptimo · Levítico 23:24</span><span class="lang-en">day 1 of the seventh month · Leviticus 23:24</span></li>'+
+  '<li><strong>Yom Kippur</strong> — <span class="lang-es">día 10 del mes séptimo · Levítico 23:27</span><span class="lang-en">day 10 of the seventh month · Leviticus 23:27</span></li>'+
+  '<li><strong>Sucot</strong> — <span class="lang-es">días 15 al 21 del mes séptimo · Levítico 23:34</span><span class="lang-en">days 15 to 21 of the seventh month · Leviticus 23:34</span></li>'+
+  '<li><strong>Sheminí Atzeret</strong> — <span class="lang-es">día 22 del mes séptimo · Levítico 23:36</span><span class="lang-en">day 22 of the seventh month · Leviticus 23:36</span></li>'+
+  '<li><strong>Purim</strong> — <span class="lang-es">días 14 y 15 del mes duodécimo · Ester 9:21</span><span class="lang-en">days 14 and 15 of the twelfth month · Esther 9:21</span></li>'+
+  '</ul><p><span class="lang-es">Sin ningún día inventado: los ayunos de Zacarías 8:19 van por su mes (cuarto, quinto, séptimo y décimo), la Dedicación cerca del invierno (Juan 10:22), y el año sabático y el Jubileo a nivel de año (Levítico 25:4, 10).</span><span class="lang-en">With no day invented: Zechariah 8:19’s fasts go by their month (fourth, fifth, seventh and tenth), the Dedication near winter (John 10:22), and the sabbatical year and Jubilee at year level (Leviticus 25:4, 10).</span></p>';
+  host.appendChild(sum);
+}
+buildStrict();
+document.querySelectorAll("[data-setview]").forEach(function(b){b.addEventListener("click",function(){document.body.setAttribute("data-view",b.getAttribute("data-setview"));document.querySelectorAll("[data-setview]").forEach(function(x){x.classList.toggle("active",x===b);});window.scrollTo({top:0,behavior:"smooth"});});});
+document.querySelectorAll("[data-setlang]").forEach(function(b){b.addEventListener("click",function(){document.body.setAttribute("data-lang",b.getAttribute("data-setlang"));document.querySelectorAll("[data-setlang]").forEach(function(x){x.classList.toggle("active",x===b);});});});
+</script>
+</body>
+</html>
